@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auditoría BTL · Supermercados Peruanos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+/* =========================================================
+   AUDITORÍA BTL — Design tokens
+   ========================================================= */
+:root{
+  --bg:#F3F5F8;
+  --surface:#FFFFFF;
+  --surface-alt:#FAFBFC;
+  --ink:#151B26;
+  --ink-soft:#5B6472;
+  --ink-faint:#8A93A1;
+  --border:#E4E7EC;
+  --border-strong:#D2D7DF;
+
+  --brand:#C8102E;         /* rojo corporativo Plaza Vea, uso puntual */
+  --brand-dark:#94001F;
+  --brand-tint:#FDEBEE;
+
+  --ok:#1D8A5B;
+  --ok-tint:#E7F6EE;
+  --warn:#B8790A;
+  --warn-tint:#FCF1DC;
+  --bad:#D93A3A;
+  --bad-tint:#FCE8E8;
+  --na:#8A93A1;
+  --na-tint:#EEF0F3;
+
+  --radius-s:8px;
+  --radius-m:12px;
+  --radius-l:18px;
+  --shadow-s:0 1px 2px rgba(21,27,38,.06);
+  --shadow-m:0 6px 20px rgba(21,27,38,.08);
+  --shadow-l:0 16px 40px rgba(21,27,38,.14);
+
+  --font-display:'Sora', 'Inter', sans-serif;
+  --font-body:'Inter', sans-serif;
+  --font-mono:'JetBrains Mono', monospace;
+
+  --sidebar-w:248px;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--font-body);
+  -webkit-font-smoothing:antialiased;
+  line-height:1.5;
+}
+button{font-family:inherit;}
+input,select,textarea{font-family:inherit;}
+a{color:inherit;}
+::selection{background:var(--brand-tint);color:var(--brand-dark);}
+
+/* focus visibility */
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible,[tabindex]:focus-visible{
+  outline:2px solid var(--brand);outline-offset:2px;
+}
+
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:.01ms !important;transition-duration:.01ms !important;}
+}
+
+/* =========================================================
+   Shell
+   ========================================================= */
+#app-shell{display:flex;min-height:100vh;}
+
+.sidebar{
+  width:var(--sidebar-w);
+  background:var(--ink);
+  color:#fff;
+  flex-shrink:0;
+  padding:22px 16px;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  position:sticky;
+  top:0;
+  height:100vh;
+  overflow-y:auto;
+}
+.sidebar-brand{
+  display:flex;align-items:center;gap:10px;
+  padding:6px 8px 18px 8px;
+  border-bottom:1px solid rgba(255,255,255,.1);
+  margin-bottom:14px;
+}
+.sidebar-brand .mark{
+  width:34px;height:34px;border-radius:9px;
+  background:var(--brand);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);font-weight:800;font-size:15px;
+  flex-shrink:0;
+}
+.sidebar-brand .txt{line-height:1.2;}
+.sidebar-brand .txt b{font-family:var(--font-display);font-size:14.5px;font-weight:700;display:block;}
+.sidebar-brand .txt span{font-size:11.5px;color:rgba(255,255,255,.55);}
+
+.nav-item{
+  display:flex;align-items:center;gap:11px;
+  padding:10px 12px;border-radius:var(--radius-s);
+  color:rgba(255,255,255,.72);
+  font-size:14px;font-weight:500;
+  cursor:pointer;border:none;background:transparent;width:100%;text-align:left;
+  transition:background .12s ease, color .12s ease;
+}
+.nav-item .ic{width:18px;text-align:center;flex-shrink:0;opacity:.9;}
+.nav-item:hover{background:rgba(255,255,255,.06);color:#fff;}
+.nav-item.active{background:var(--brand);color:#fff;}
+.nav-sep{height:1px;background:rgba(255,255,255,.1);margin:12px 4px;}
+.nav-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.35);padding:10px 12px 4px;}
+
+.sidebar-foot{margin-top:auto;padding:12px 8px 0;font-size:11px;color:rgba(255,255,255,.35);border-top:1px solid rgba(255,255,255,.1);padding-top:14px;}
+
+.main{
+  flex:1;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+}
+
+.topbar{
+  display:none;
+  align-items:center;justify-content:space-between;
+  padding:14px 16px;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:20;
+}
+.hamburger{
+  width:38px;height:38px;border-radius:var(--radius-s);border:1px solid var(--border);
+  background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;
+}
+.hamburger span,.hamburger::before,.hamburger::after{content:'';display:block;width:16px;height:2px;background:var(--ink);border-radius:2px;}
+.hamburger{flex-direction:column;gap:3px;}
+.topbar-title{font-family:var(--font-display);font-weight:700;font-size:14.5px;}
+
+.content{
+  flex:1;
+  padding:32px 40px 60px;
+  max-width:1180px;
+  width:100%;
+  margin:0 auto;
+}
+
+.overlay{
+  display:none;position:fixed;inset:0;background:rgba(21,27,38,.45);z-index:29;
+}
+
+/* =========================================================
+   Common bits
+   ========================================================= */
+.page-head{margin-bottom:26px;}
+.eyebrow{
+  font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--brand);margin:0 0 6px;
+}
+.page-title{font-family:var(--font-display);font-size:26px;font-weight:700;margin:0 0 6px;color:var(--ink);}
+.page-sub{color:var(--ink-soft);font-size:14.5px;margin:0;max-width:640px;}
+
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius-l);
+  box-shadow:var(--shadow-s);
+}
+
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:11px 18px;border-radius:var(--radius-s);
+  font-size:14px;font-weight:600;cursor:pointer;border:1px solid transparent;
+  transition:transform .08s ease, box-shadow .12s ease, background .12s ease;
+  white-space:nowrap;
+}
+.btn:active{transform:translateY(1px);}
+.btn-primary{background:var(--brand);color:#fff;box-shadow:0 2px 8px rgba(200,16,46,.28);}
+.btn-primary:hover{background:var(--brand-dark);}
+.btn-primary:disabled{background:var(--ink-faint);box-shadow:none;cursor:not-allowed;}
+.btn-ghost{background:var(--surface);color:var(--ink);border-color:var(--border-strong);}
+.btn-ghost:hover{background:var(--surface-alt);}
+.btn-text{background:transparent;color:var(--brand);padding:8px 4px;}
+.btn-text:hover{text-decoration:underline;}
+.btn-sm{padding:7px 12px;font-size:13px;}
+.btn-danger-text{background:transparent;color:var(--bad);padding:8px 4px;font-weight:600;}
+
+/* =========================================================
+   HOME
+   ========================================================= */
+.hero{
+  background:linear-gradient(135deg,var(--ink) 0%,#232C3D 100%);
+  border-radius:var(--radius-l);
+  padding:40px 36px;
+  color:#fff;
+  position:relative;
+  overflow:hidden;
+  margin-bottom:28px;
+}
+.hero::after{
+  content:'';position:absolute;right:-60px;top:-60px;width:260px;height:260px;border-radius:50%;
+  background:radial-gradient(circle,rgba(200,16,46,.35),transparent 70%);
+}
+.hero-tag{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:#FF6B7F;font-weight:700;margin-bottom:10px;}
+.hero h1{font-family:var(--font-display);font-size:30px;margin:0 0 10px;font-weight:800;max-width:520px;}
+.hero p{color:rgba(255,255,255,.68);font-size:14.5px;max-width:480px;margin:0;position:relative;z-index:1;}
+.hero-stats{display:flex;gap:28px;margin-top:24px;position:relative;z-index:1;flex-wrap:wrap;}
+.hero-stat b{font-family:var(--font-display);font-size:22px;display:block;}
+.hero-stat span{font-size:12px;color:rgba(255,255,255,.55);}
+
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.tile{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-l);
+  padding:24px 22px;cursor:pointer;text-align:left;
+  display:flex;flex-direction:column;gap:12px;
+  transition:transform .14s ease, box-shadow .14s ease, border-color .14s ease;
+}
+.tile:hover{transform:translateY(-3px);box-shadow:var(--shadow-m);border-color:var(--border-strong);}
+.tile .tile-ic{
+  width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+  font-size:19px;background:var(--brand-tint);color:var(--brand);
+}
+.tile:nth-child(2) .tile-ic{background:var(--ok-tint);color:var(--ok);}
+.tile:nth-child(3) .tile-ic{background:#EAF0FE;color:#2A54C7;}
+.tile h3{font-family:var(--font-display);font-size:16px;margin:0;font-weight:700;}
+.tile p{font-size:13px;color:var(--ink-soft);margin:0;}
+.tile .go{font-size:12.5px;font-weight:600;color:var(--brand);display:flex;align-items:center;gap:5px;margin-top:auto;}
+
+/* =========================================================
+   INSTRUCCIONES
+   ========================================================= */
+.steps{display:flex;flex-direction:column;gap:0;}
+.step{display:flex;gap:16px;padding:18px 4px;border-bottom:1px solid var(--border);}
+.step:last-child{border-bottom:none;}
+.step-n{
+  width:30px;height:30px;border-radius:50%;background:var(--ink);color:#fff;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:12.5px;font-weight:600;
+}
+.step-body h4{margin:0 0 4px;font-size:14.5px;font-weight:700;}
+.step-body p{margin:0;font-size:13.5px;color:var(--ink-soft);}
+
+/* =========================================================
+   FORM
+   ========================================================= */
+.field-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:6px;}
+.field{display:flex;flex-direction:column;gap:6px;}
+.field label{font-size:12.5px;font-weight:600;color:var(--ink-soft);}
+.field select,.field input[type=text],.field input[type=date]{
+  padding:11px 12px;border:1px solid var(--border-strong);border-radius:var(--radius-s);
+  font-size:14px;background:var(--surface);color:var(--ink);
+}
+.field select:focus,.field input:focus{border-color:var(--brand);}
+
+.progress-mini{height:6px;border-radius:4px;background:var(--border);overflow:hidden;}
+.progress-mini > div{height:100%;background:var(--ok);border-radius:4px;transition:width .3s ease;}
+
+.q-accordion{display:flex;flex-direction:column;gap:12px;}
+.q-item{border:1px solid var(--border);border-radius:var(--radius-m);overflow:hidden;background:var(--surface);}
+.q-head{
+  display:flex;align-items:center;gap:14px;padding:16px 18px;cursor:pointer;user-select:none;
+}
+.q-head .q-idx{
+  font-family:var(--font-mono);font-size:12px;color:var(--ink-faint);width:20px;flex-shrink:0;
+}
+.q-head .q-txt{flex:1;min-width:0;}
+.q-head .q-txt b{display:block;font-size:14.5px;font-weight:600;}
+.q-head .q-txt .q-summary{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+.q-head .q-badge{
+  font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;flex-shrink:0;
+}
+.q-head .q-bar{width:110px;flex-shrink:0;display:none;}
+@media(min-width:640px){.q-head .q-bar{display:block;}}
+.q-chev{color:var(--ink-faint);flex-shrink:0;transition:transform .15s ease;}
+.q-item.open .q-chev{transform:rotate(180deg);}
+
+.q-body{max-height:0;overflow:hidden;transition:max-height .22s ease;background:var(--surface-alt);}
+.q-item.open .q-body{max-height:2000px;}
+.q-body-inner{padding:6px 18px 18px;}
+
+.elem-row{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:11px 0;border-bottom:1px solid var(--border);
+}
+.elem-row:last-of-type{border-bottom:none;}
+.elem-name{font-size:13.5px;font-weight:500;}
+.answer-group{display:flex;gap:6px;flex-shrink:0;}
+.ans-btn{
+  padding:6px 13px;border-radius:20px;border:1px solid var(--border-strong);background:var(--surface);
+  font-size:12.5px;font-weight:600;cursor:pointer;color:var(--ink-soft);
+}
+.ans-btn[data-v="Sí"].sel{background:var(--ok);border-color:var(--ok);color:#fff;}
+.ans-btn[data-v="No"].sel{background:var(--bad);border-color:var(--bad);color:#fff;}
+.ans-btn[data-v="N/A"].sel{background:var(--na);border-color:var(--na);color:#fff;}
+
+.add-elem-row{display:flex;gap:8px;margin-top:12px;}
+.add-elem-row input{flex:1;padding:9px 12px;border:1px dashed var(--border-strong);border-radius:var(--radius-s);font-size:13px;background:transparent;}
+
+.form-actions{display:flex;justify-content:space-between;align-items:center;margin-top:26px;padding-top:20px;border-top:1px solid var(--border);}
+
+.summary-strip{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:22px;}
+.mini-stat{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-m);
+  padding:14px 18px;flex:1;min-width:130px;
+}
+.mini-stat b{font-family:var(--font-display);font-size:22px;display:block;}
+.mini-stat span{font-size:12px;color:var(--ink-soft);}
+
+/* =========================================================
+   DASHBOARD
+   ========================================================= */
+.kpi-row{display:grid;grid-template-columns:280px 1fr;gap:20px;margin-bottom:22px;}
+@media(max-width:860px){.kpi-row{grid-template-columns:1fr;}}
+
+.kpi-ring-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-l);
+  padding:26px;display:flex;flex-direction:column;align-items:center;gap:10px;box-shadow:var(--shadow-s);
+}
+.ring-wrap{position:relative;width:150px;height:150px;}
+.ring-wrap svg{transform:rotate(-90deg);}
+.ring-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.ring-label b{font-family:var(--font-display);font-size:28px;}
+.ring-label span{font-size:11px;color:var(--ink-soft);}
+.kpi-ring-card h4{margin:4px 0 0;font-size:13.5px;font-weight:700;}
+.kpi-ring-card p{margin:0;font-size:12px;color:var(--ink-soft);text-align:center;}
+
+.kpi-secondary{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:520px){.kpi-secondary{grid-template-columns:1fr;}}
+
+.bar-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-l);padding:20px;box-shadow:var(--shadow-s);}
+.bar-card h4{margin:0 0 14px;font-size:13.5px;font-weight:700;}
+.bar-list{display:flex;flex-direction:column;gap:12px;}
+.bar-line{display:flex;flex-direction:column;gap:5px;}
+.bar-line .bl-top{display:flex;justify-content:space-between;font-size:12.5px;}
+.bar-line .bl-top .nm{font-weight:500;color:var(--ink);}
+.bar-line .bl-top .pc{font-weight:700;font-family:var(--font-mono);}
+.bar-track{height:8px;border-radius:5px;background:var(--border);overflow:hidden;}
+.bar-fill{height:100%;border-radius:5px;}
+
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;}
+
+.section-title{font-family:var(--font-display);font-size:15px;font-weight:700;margin:26px 0 12px;}
+
+table.data-table{width:100%;border-collapse:collapse;font-size:13.5px;}
+table.data-table thead th{
+  text-align:left;padding:10px 14px;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;
+  color:var(--ink-soft);border-bottom:1px solid var(--border);font-weight:600;
+}
+table.data-table tbody td{padding:12px 14px;border-bottom:1px solid var(--border);}
+table.data-table tbody tr:hover{background:var(--surface-alt);}
+.pill{padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:700;display:inline-flex;align-items:center;}
+
+.empty-state{
+  text-align:center;padding:60px 20px;color:var(--ink-soft);
+}
+.empty-state .ic{font-size:34px;margin-bottom:10px;}
+.empty-state h3{font-family:var(--font-display);font-size:16px;color:var(--ink);margin:0 0 6px;}
+.empty-state p{font-size:13.5px;margin:0 0 16px;}
+
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;align-items:center;justify-content:space-between;}
+.toolbar-filters{display:flex;gap:10px;flex-wrap:wrap;}
+.toolbar-filters select{padding:9px 12px;border:1px solid var(--border-strong);border-radius:var(--radius-s);font-size:13px;background:var(--surface);}
+
+/* =========================================================
+   CONFIG
+   ========================================================= */
+.chip-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
+.chip{
+  display:flex;align-items:center;gap:8px;background:var(--surface-alt);border:1px solid var(--border);
+  padding:7px 8px 7px 13px;border-radius:20px;font-size:12.5px;font-weight:500;
+}
+.chip button{background:none;border:none;color:var(--ink-faint);cursor:pointer;font-size:14px;line-height:1;padding:2px;}
+.chip button:hover{color:var(--bad);}
+.config-block{padding:20px 22px;border-bottom:1px solid var(--border);}
+.config-block:last-child{border-bottom:none;}
+.config-block h4{margin:0 0 4px;font-size:14.5px;}
+.config-block p{margin:0 0 6px;font-size:12.5px;color:var(--ink-soft);}
+
+/* toast */
+#toast{
+  position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--ink);color:#fff;padding:12px 20px;border-radius:var(--radius-s);
+  font-size:13.5px;font-weight:500;box-shadow:var(--shadow-l);opacity:0;pointer-events:none;
+  transition:opacity .2s ease, transform .2s ease;z-index:100;display:flex;align-items:center;gap:8px;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* =========================================================
+   Responsive
+   ========================================================= */
+@media(max-width:920px){
+  .tiles{grid-template-columns:1fr;}
+  .field-row{grid-template-columns:1fr;}
+}
+@media(max-width:880px){
+  .sidebar{
+    position:fixed;left:0;top:0;height:100%;z-index:30;
+    transform:translateX(-100%);transition:transform .2s ease;
+    box-shadow:var(--shadow-l);
+  }
+  .sidebar.open{transform:translateX(0);}
+  .topbar{display:flex;}
+  .overlay.show{display:block;}
+  .content{padding:22px 16px 50px;}
+  .hero{padding:26px 22px;}
+  .hero h1{font-size:22px;}
+}
+</style>
+</head>
+<body>
+
+<div id="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="mark">BTL</div>
+      <div class="txt"><b>Auditoría BTL</b><span>Supermercados Peruanos</span></div>
+    </div>
+    <div class="nav-label">Navegación</div>
+    <button class="nav-item" data-route="inicio"><span class="ic">🏠</span>Inicio</button>
+    <button class="nav-item" data-route="formulario"><span class="ic">📝</span>Abrir formulario</button>
+    <button class="nav-item" data-route="dashboard"><span class="ic">📊</span>Dashboard</button>
+    <div class="nav-sep"></div>
+    <div class="nav-label">Ayuda y ajustes</div>
+    <button class="nav-item" data-route="instrucciones"><span class="ic">📖</span>Instrucciones</button>
+    <button class="nav-item" data-route="config"><span class="ic">⚙️</span>Configuración</button>
+    <div class="sidebar-foot" id="sync-status">Datos guardados localmente en este navegador.</div>
+  </aside>
+
+  <div class="overlay" id="overlay"></div>
+
+  <div class="main">
+    <div class="topbar">
+      <button class="hamburger" id="hamburger" aria-label="Abrir menú"><span></span></button>
+      <div class="topbar-title">Auditoría BTL</div>
+      <div style="width:38px"></div>
+    </div>
+    <div class="content" id="content"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* =========================================================
+   Estado y almacenamiento
+   ========================================================= */
+const STORAGE_KEY = 'btl_auditoria_data_v1';
+
+const DEFAULT_DATA = {
+  tiendas: [
+    'Plaza Vea Primavera','Plaza Vea Risso','Plaza Vea Caminos del Inca',
+    'Plaza Vea San Miguel','Plaza Vea Salaverry','Vivanda La Molina',
+    'Vivanda Miraflores','Makro Ate','Makro Chorrillos'
+  ],
+  elementos: ['Jalavista 15x60','Jalavista 30x90','Ganchera','Collarín','Floor Graphic'],
+  preguntas: [
+    {id:'estado',      texto:'¿El elemento se encuentra en buen estado?'},
+    {id:'instalacion', texto:'¿La instalación es correcta según el layout?'},
+    {id:'limpieza',    texto:'¿El elemento está limpio y presentable?'},
+    {id:'visibilidad', texto:'¿Tiene buena visibilidad para el cliente?'},
+    {id:'senaletica',  texto:'¿La señalética de precios está correcta?'}
+  ],
+  auditorias: []
+};
+
+function loadData(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) { saveData(structuredClone(DEFAULT_DATA)); return structuredClone(DEFAULT_DATA); }
+    const parsed = JSON.parse(raw);
+    return Object.assign(structuredClone(DEFAULT_DATA), parsed);
+  }catch(e){
+    console.error('Error leyendo almacenamiento', e);
+    return structuredClone(DEFAULT_DATA);
+  }
+}
+function saveData(d){ localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
+
+let DATA = loadData();
+
+/* borrador de auditoría en curso (no persistido hasta enviar) */
+let draft = null; // {editingId?, tienda, supervisor, fecha, elementos:[...], respuestas:{preguntaId:{elemento:'Sí'|'No'|'N/A'}}}
+let openAccordion = new Set();
+let isSyncing = false;
+let lastSyncOk = null; // null = nunca intentado, true/false = resultado último intento
+
+/* =========================================================
+   Conexión con Google Sheets (Apps Script Web App)
+   ========================================================= */
+/**
+ * ⚠️ CONFIGURA ESTO ANTES DE DESPLEGAR ⚠️
+ * Pega aquí la URL de tu implementación de Apps Script (termina en /exec).
+ * Al quedar fija aquí, cualquiera que abra el link de la app ya guarda y
+ * lee de la misma hoja compartida, sin tener que configurar nada.
+ */
+const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwHcXUveVhJanm64EtbJIBT7VlA3pJoJW5jKcAF3TA1vAN_W6h3L6LYGWRJh2MSknm7pw/exec';
+
+const CONFIG_KEY = 'btl_config_v1';
+function loadConfig(){
+  let stored = {};
+  try{ stored = JSON.parse(localStorage.getItem(CONFIG_KEY)) || {}; }
+  catch(e){ stored = {}; }
+  // La URL fija en el código manda por defecto; solo se usa la guardada en
+  // este navegador si el usuario la sobrescribió explícitamente desde Configuración.
+  return { webAppUrl: stored.webAppUrl || DEFAULT_WEBAPP_URL };
+}
+function saveConfig(cfg){ localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg)); }
+let CONFIG = loadConfig();
+
+function sheetsConfigured(){
+  const url = (CONFIG.webAppUrl || '').trim();
+  return !!url && !url.startsWith('PEGA_AQUI');
+}
+
+async function pingSheet(url){
+  const res = await fetch(url + '?action=ping');
+  const json = await res.json();
+  if(!json.ok) throw new Error(json.error || 'Respuesta inválida');
+  return json;
+}
+
+/* Trae todas las auditorías desde la hoja y reemplaza el historial local (caché offline) */
+async function syncFromSheet(silent){
+  if(!sheetsConfigured()) return false;
+  isSyncing = true;
+  if(!silent) render();
+  try{
+    const res = await fetch(CONFIG.webAppUrl + '?action=list');
+    const json = await res.json();
+    if(!json.ok) throw new Error(json.error || 'Respuesta inválida');
+    DATA.auditorias = json.auditorias;
+    saveData(DATA);
+    lastSyncOk = true;
+    return true;
+  }catch(e){
+    console.error('Error sincronizando con Sheets', e);
+    lastSyncOk = false;
+    if(!silent) toast('No se pudo conectar con Google Sheets, usando datos locales','⚠️');
+    return false;
+  }finally{
+    isSyncing = false;
+    render();
+  }
+}
+
+/* Envía una auditoría nueva o editada a la hoja. action: 'create' | 'update' */
+async function pushAuditoriaToSheet(action, auditoria){
+  if(!sheetsConfigured()) return {ok:false, offline:true};
+  const preguntasTexto = {};
+  DATA.preguntas.forEach(p => preguntasTexto[p.id] = p.texto);
+  try{
+    const res = await fetch(CONFIG.webAppUrl, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'}, // evita preflight CORS
+      body: JSON.stringify({action, auditoria:{...auditoria, preguntasTexto}})
+    });
+    const json = await res.json();
+    if(!json.ok) throw new Error(json.error || 'Respuesta inválida');
+    return {ok:true};
+  }catch(e){
+    console.error('Error enviando a Sheets', e);
+    return {ok:false, error:e};
+  }
+}
+
+/* =========================================================
+   Utilidades
+   ========================================================= */
+function uid(){ return 'A-' + Math.random().toString(36).slice(2,8).toUpperCase(); }
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function fmtDate(iso){
+  const [y,m,d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function toast(msg, icon='✓'){
+  const t = document.getElementById('toast');
+  t.innerHTML = `<span>${icon}</span><span>${escapeHtml(msg)}</span>`;
+  t.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(()=>t.classList.remove('show'), 2600);
+}
+function statusColor(pct){
+  if(pct === null) return 'var(--na)';
+  if(pct >= 90) return 'var(--ok)';
+  if(pct >= 75) return 'var(--warn)';
+  return 'var(--bad)';
+}
+function statusTint(pct){
+  if(pct === null) return 'var(--na-tint)';
+  if(pct >= 90) return 'var(--ok-tint)';
+  if(pct >= 75) return 'var(--warn-tint)';
+  return 'var(--bad-tint)';
+}
+function statusEmoji(pct){
+  if(pct === null) return '⚪';
+  if(pct >= 90) return '🟢';
+  if(pct >= 75) return '🟡';
+  return '🔴';
+}
+
+/* Calcula % cumplimiento de una auditoría (Sí / (Sí+No)), excluye N/A */
+function auditCompliance(auditoria){
+  let si=0, no=0;
+  Object.values(auditoria.respuestas).forEach(elMap=>{
+    Object.values(elMap).forEach(v=>{
+      if(v==='Sí') si++;
+      else if(v==='No') no++;
+    });
+  });
+  const total = si+no;
+  return total===0 ? null : Math.round((si/total)*100);
+}
+
+/* =========================================================
+   Router
+   ========================================================= */
+function navigate(route){
+  location.hash = '#/' + route;
+}
+window.addEventListener('hashchange', render);
+window.addEventListener('DOMContentLoaded', ()=>{
+  if(!location.hash) location.hash = '#/inicio';
+  render();
+  setupSidebar();
+  if(sheetsConfigured()) syncFromSheet(true);
+});
+
+function currentRoute(){
+  const h = location.hash.replace('#/','');
+  return h || 'inicio';
+}
+
+function setupSidebar(){
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('overlay');
+  const hamburger = document.getElementById('hamburger');
+  hamburger.addEventListener('click', ()=>{
+    sidebar.classList.add('open'); overlay.classList.add('show');
+  });
+  overlay.addEventListener('click', closeSidebar);
+  function closeSidebar(){ sidebar.classList.remove('open'); overlay.classList.remove('show'); }
+  document.querySelectorAll('.nav-item').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      navigate(btn.dataset.route);
+      closeSidebar();
+    });
+  });
+}
+
+function updateActiveNav(){
+  const route = currentRoute();
+  document.querySelectorAll('.nav-item').forEach(btn=>{
+    btn.classList.toggle('active', btn.dataset.route === route);
+  });
+  document.querySelector('.topbar-title').textContent =
+    {inicio:'Inicio', formulario:'Formulario', dashboard:'Dashboard', instrucciones:'Instrucciones', config:'Configuración'}[route] || 'Auditoría BTL';
+}
+
+function updateSyncStatus(){
+  const el = document.getElementById('sync-status');
+  if(!el) return;
+  if(!sheetsConfigured()){
+    el.innerHTML = 'Datos guardados solo en este navegador. <a href="#/config" style="color:#fff;text-decoration:underline;">Conectar Google Sheets</a>';
+  } else if(isSyncing){
+    el.textContent = '🔄 Sincronizando con Google Sheets…';
+  } else if(lastSyncOk === false){
+    el.textContent = '⚠️ Sin conexión a Sheets, viendo caché local.';
+  } else {
+    el.textContent = '☁️ Sincronizado con Google Sheets.';
+  }
+}
+
+function render(){
+  const route = currentRoute();
+  updateActiveNav();
+  updateSyncStatus();
+  const c = document.getElementById('content');
+  if(route === 'inicio') c.innerHTML = viewInicio();
+  else if(route === 'formulario') c.innerHTML = viewFormulario();
+  else if(route === 'dashboard') c.innerHTML = viewDashboard();
+  else if(route === 'instrucciones') c.innerHTML = viewInstrucciones();
+  else if(route === 'config') c.innerHTML = viewConfig();
+  else c.innerHTML = viewInicio();
+  bindRouteEvents(route);
+  window.scrollTo({top:0});
+}
+
+/* =========================================================
+   VISTA: INICIO
+   ========================================================= */
+function viewInicio(){
+  const total = DATA.auditorias.length;
+  const promedios = DATA.auditorias.map(auditCompliance).filter(v=>v!==null);
+  const promedio = promedios.length ? Math.round(promedios.reduce((a,b)=>a+b,0)/promedios.length) : null;
+  const tiendasAuditadas = new Set(DATA.auditorias.map(a=>a.tienda)).size;
+
+  return `
+    <div class="hero">
+      <div class="hero-tag">Formato Impulso · Control BTL</div>
+      <h1>Auditoría de elementos BTL en tienda</h1>
+      <p>Registra el estado de jalavistas, gancheras, collarines y demás elementos de exhibición por tienda, y sigue el cumplimiento en tiempo real.</p>
+      <div class="hero-stats">
+        <div class="hero-stat"><b>${total}</b><span>Auditorías registradas</span></div>
+        <div class="hero-stat"><b>${promedio===null?'—':promedio+'%'}</b><span>Cumplimiento promedio</span></div>
+        <div class="hero-stat"><b>${tiendasAuditadas}</b><span>Tiendas auditadas</span></div>
+      </div>
+    </div>
+
+    <div class="tiles">
+      <button class="tile" data-route="instrucciones">
+        <div class="tile-ic">📖</div>
+        <h3>Ver instrucciones</h3>
+        <p>Cómo completar una auditoría paso a paso, desde la selección de tienda hasta el envío.</p>
+        <div class="go">Ver guía →</div>
+      </button>
+      <button class="tile" data-route="formulario">
+        <div class="tile-ic">📝</div>
+        <h3>Abrir formulario</h3>
+        <p>Inicia una nueva auditoría: elige tienda, evalúa cada elemento y envía el registro.</p>
+        <div class="go">Empezar auditoría →</div>
+      </button>
+      <button class="tile" data-route="dashboard">
+        <div class="tile-ic">📊</div>
+        <h3>Ver dashboard</h3>
+        <p>Cumplimiento general, por pregunta y por tienda, con el histórico de auditorías.</p>
+        <div class="go">Ver indicadores →</div>
+      </button>
+    </div>
+  `;
+}
+
+/* =========================================================
+   VISTA: INSTRUCCIONES
+   ========================================================= */
+function viewInstrucciones(){
+  return `
+    <div class="page-head">
+      <div class="eyebrow">Guía rápida</div>
+      <h1 class="page-title">Instrucciones</h1>
+      <p class="page-sub">Sigue estos pasos para completar una auditoría de elementos BTL de forma correcta y rápida.</p>
+    </div>
+    <div class="card" style="padding:8px 22px;">
+      <div class="steps">
+        <div class="step"><div class="step-n">1</div><div class="step-body">
+          <h4>Selecciona la tienda y el supervisor</h4>
+          <p>En "Abrir formulario", elige la tienda desde el desplegable, ingresa tu nombre como supervisor y confirma la fecha de visita.</p>
+        </div></div>
+        <div class="step"><div class="step-n">2</div><div class="step-body">
+          <h4>Revisa la lista de elementos</h4>
+          <p>Se carga la lista estándar de elementos BTL (jalavistas, ganchera, collarín, floor graphic). Puedes agregar elementos adicionales propios de la tienda si es necesario.</p>
+        </div></div>
+        <div class="step"><div class="step-n">3</div><div class="step-body">
+          <h4>Responde cada pregunta por elemento</h4>
+          <p>Cada pregunta aparece cerrada por defecto, mostrando solo el resultado global. Haz clic en "Ver detalle" para calificar cada elemento como Sí, No o N/A.</p>
+        </div></div>
+        <div class="step"><div class="step-n">4</div><div class="step-body">
+          <h4>Verifica el resumen</h4>
+          <p>La barra de cada pregunta y el resumen superior se actualizan en vivo, así identificas de inmediato qué falta por calificar.</p>
+        </div></div>
+        <div class="step"><div class="step-n">5</div><div class="step-body">
+          <h4>Envía la auditoría</h4>
+          <p>Al enviar, el registro queda guardado y disponible de inmediato en el Dashboard, con su cumplimiento calculado automáticamente.</p>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="section-title">Criterios de calificación</div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;">
+      <div class="card" style="padding:14px 18px;flex:1;min-width:180px;"><b style="color:var(--ok)">🟢 Sí</b><p style="margin:6px 0 0;font-size:13px;color:var(--ink-soft)">El elemento cumple el criterio evaluado.</p></div>
+      <div class="card" style="padding:14px 18px;flex:1;min-width:180px;"><b style="color:var(--bad)">🔴 No</b><p style="margin:6px 0 0;font-size:13px;color:var(--ink-soft)">El elemento no cumple, requiere acción correctiva.</p></div>
+      <div class="card" style="padding:14px 18px;flex:1;min-width:180px;"><b style="color:var(--na)">⚪ N/A</b><p style="margin:6px 0 0;font-size:13px;color:var(--ink-soft)">El elemento no aplica en esta tienda o visita.</p></div>
+    </div>
+  `;
+}
+
+/* Carga una auditoría existente en el borrador para editarla */
+function editAudit(id){
+  const a = DATA.auditorias.find(x => String(x.id) === String(id));
+  if(!a){ toast('No se encontró esa auditoría','⚠️'); return; }
+  const respuestas = {};
+  DATA.preguntas.forEach(p => respuestas[p.id] = { ...(a.respuestas[p.id]||{}) });
+  draft = {
+    editingId: a.id,
+    tienda: a.tienda,
+    supervisor: a.supervisor,
+    fecha: a.fecha,
+    elementos: [...(a.elementos && a.elementos.length ? a.elementos : DATA.elementos)],
+    respuestas
+  };
+  openAccordion = new Set([DATA.preguntas[0]?.id]);
+  navigate('formulario');
+}
+
+/* =========================================================
+   VISTA: FORMULARIO
+   ========================================================= */
+function viewFormulario(){
+  if(!draft){
+    return `
+      <div class="page-head">
+        <div class="eyebrow">Nueva auditoría</div>
+        <h1 class="page-title">Abrir formulario</h1>
+        <p class="page-sub">Indica la tienda, el supervisor y la fecha para iniciar la evaluación de elementos BTL.</p>
+      </div>
+      <div class="card" style="padding:26px 28px;max-width:640px;">
+        <div class="field-row" style="grid-template-columns:1fr;gap:16px;">
+          <div class="field">
+            <label for="f-tienda">Tienda</label>
+            <select id="f-tienda">
+              ${DATA.tiendas.map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('')}
+            </select>
+          </div>
+          <div class="field">
+            <label for="f-sup">Supervisor</label>
+            <input type="text" id="f-sup" placeholder="Nombre y apellido">
+          </div>
+          <div class="field">
+            <label for="f-fecha">Fecha</label>
+            <input type="date" id="f-fecha" value="${todayISO()}">
+          </div>
+        </div>
+        <div class="form-actions" style="justify-content:flex-end;border-top:none;padding-top:8px;margin-top:18px;">
+          <button class="btn btn-primary" id="btn-iniciar">Iniciar auditoría →</button>
+        </div>
+      </div>
+    `;
+  }
+
+  // resumen global
+  let siT=0,noT=0,naT=0;
+  DATA.preguntas.forEach(p=>{
+    draft.elementos.forEach(el=>{
+      const v = draft.respuestas[p.id]?.[el];
+      if(v==='Sí') siT++; else if(v==='No') noT++; else if(v==='N/A') naT++;
+    });
+  });
+  const totalCeldas = DATA.preguntas.length * draft.elementos.length;
+  const respondidas = siT+noT+naT;
+  const pctAvance = totalCeldas ? Math.round((respondidas/totalCeldas)*100) : 0;
+  const pctCumpl = (siT+noT)>0 ? Math.round((siT/(siT+noT))*100) : null;
+
+  const accordionHtml = DATA.preguntas.map((p, idx)=>{
+    const answers = draft.elementos.map(el => draft.respuestas[p.id]?.[el] || null);
+    const si = answers.filter(a=>a==='Sí').length;
+    const no = answers.filter(a=>a==='No').length;
+    const na = answers.filter(a=>a==='N/A').length;
+    const answeredCount = si+no+na;
+    const denom = si+no;
+    const pct = denom>0 ? Math.round((si/denom)*100) : null;
+    const isOpen = openAccordion.has(p.id);
+    return `
+      <div class="q-item ${isOpen?'open':''}" data-qid="${p.id}">
+        <div class="q-head" data-toggle="${p.id}">
+          <div class="q-idx">${String(idx+1).padStart(2,'0')}</div>
+          <div class="q-txt">
+            <b>${escapeHtml(p.texto)}</b>
+            <div class="q-summary">${answeredCount}/${draft.elementos.length} elementos calificados · ${si} Sí · ${no} No · ${na} N/A</div>
+          </div>
+          <div class="q-bar">
+            <div class="progress-mini"><div style="width:${pct===null?0:pct}%;background:${statusColor(pct)}"></div></div>
+          </div>
+          <div class="q-badge" style="background:${statusTint(pct)};color:${statusColor(pct)}">${pct===null?'—':pct+'%'}</div>
+          <div class="q-chev">▾</div>
+        </div>
+        <div class="q-body">
+          <div class="q-body-inner">
+            ${draft.elementos.map(el=>{
+              const v = draft.respuestas[p.id]?.[el] || null;
+              return `
+                <div class="elem-row">
+                  <div class="elem-name">${escapeHtml(el)}</div>
+                  <div class="answer-group" data-qid="${p.id}" data-el="${escapeHtml(el)}">
+                    ${['Sí','No','N/A'].map(opt=>`<button class="ans-btn ${v===opt?'sel':''}" data-v="${opt}">${opt}</button>`).join('')}
+                  </div>
+                </div>`;
+            }).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  const allAnswered = respondidas === totalCeldas && totalCeldas>0;
+
+  return `
+    <div class="page-head">
+      <div class="eyebrow">${draft.editingId ? `✏️ Editando ${escapeHtml(draft.editingId)} · ` : ''}${escapeHtml(draft.tienda)} · ${fmtDate(draft.fecha)}</div>
+      <h1 class="page-title">${draft.editingId ? 'Editar auditoría' : 'Evaluación de elementos'}</h1>
+      <p class="page-sub">Supervisor: <strong>${escapeHtml(draft.supervisor||'—')}</strong> — despliega cada pregunta para calificar los elementos.</p>
+    </div>
+
+    <div class="summary-strip">
+      <div class="mini-stat"><b style="color:${statusColor(pctCumpl)}">${pctCumpl===null?'—':pctCumpl+'%'}</b><span>Cumplimiento (Sí / Sí+No)</span></div>
+      <div class="mini-stat"><b>${pctAvance}%</b><span>Avance del formulario</span></div>
+      <div class="mini-stat"><b>${draft.elementos.length}</b><span>Elementos evaluados</span></div>
+      <div class="mini-stat"><b>${DATA.preguntas.length}</b><span>Preguntas</span></div>
+    </div>
+
+    <div class="q-accordion">
+      ${accordionHtml}
+    </div>
+
+    <div class="add-elem-row">
+      <input type="text" id="new-elem-input" placeholder="Agregar elemento (ej. Torre exhibidora)">
+      <button class="btn btn-ghost btn-sm" id="btn-add-elem">➕ Agregar elemento</button>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-ghost" id="btn-cancelar">${draft.editingId ? 'Descartar cambios' : 'Cancelar auditoría'}</button>
+      <button class="btn btn-primary" id="btn-enviar" ${allAnswered?'':'disabled'}>
+        ${allAnswered ? (draft.editingId ? 'Guardar cambios ✓' : 'Enviar auditoría ✓') : `Faltan ${totalCeldas-respondidas} respuestas`}
+      </button>
+    </div>
+  `;
+}
+
+/* =========================================================
+   VISTA: DASHBOARD
+   ========================================================= */
+function viewDashboard(){
+  const auditorias = DATA.auditorias;
+  if(auditorias.length===0){
+    return `
+      <div class="page-head">
+        <div class="eyebrow">Indicadores</div>
+        <h1 class="page-title">Dashboard</h1>
+        <p class="page-sub">Cumplimiento general, por pregunta y por tienda.</p>
+      </div>
+      <div class="card">
+        <div class="empty-state">
+          <div class="ic">📊</div>
+          <h3>Todavía no hay auditorías</h3>
+          <p>Envía tu primera auditoría desde el formulario para ver los indicadores aquí.</p>
+          <button class="btn btn-primary" data-route="formulario">Abrir formulario</button>
+        </div>
+      </div>
+    `;
+  }
+
+  const compliances = auditorias.map(auditCompliance).filter(v=>v!==null);
+  const promedio = compliances.length ? Math.round(compliances.reduce((a,b)=>a+b,0)/compliances.length) : null;
+  const r = 58, c = 2*Math.PI*r;
+  const dash = promedio===null ? 0 : (promedio/100)*c;
+
+  // por pregunta
+  const porPregunta = DATA.preguntas.map(p=>{
+    let si=0,no=0;
+    auditorias.forEach(a=>{
+      const em = a.respuestas[p.id]; if(!em) return;
+      Object.values(em).forEach(v=>{ if(v==='Sí') si++; else if(v==='No') no++; });
+    });
+    const pct = (si+no)>0 ? Math.round((si/(si+no))*100) : null;
+    return {texto:p.texto, pct};
+  });
+
+  // por tienda
+  const tiendasMap = {};
+  auditorias.forEach(a=>{
+    if(!tiendasMap[a.tienda]) tiendasMap[a.tienda] = [];
+    const c2 = auditCompliance(a);
+    if(c2!==null) tiendasMap[a.tienda].push(c2);
+  });
+  const porTienda = Object.entries(tiendasMap).map(([tienda, arr])=>({
+    tienda, pct: arr.length ? Math.round(arr.reduce((a,b)=>a+b,0)/arr.length) : null
+  })).sort((a,b)=>(b.pct??0)-(a.pct??0));
+
+  // tabla reciente
+  const recientes = [...auditorias].sort((a,b)=>b.creadoEn-a.creadoEn).slice(0,12);
+
+  return `
+    <div class="page-head">
+      <div class="eyebrow">Indicadores</div>
+      <h1 class="page-title">Dashboard</h1>
+      <p class="page-sub">Resultados consolidados de ${auditorias.length} auditoría${auditorias.length===1?'':'s'} registrada${auditorias.length===1?'':'s'}.</p>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi-ring-card">
+        <div class="ring-wrap">
+          <svg width="150" height="150" viewBox="0 0 150 150">
+            <circle cx="75" cy="75" r="${r}" fill="none" stroke="var(--border)" stroke-width="14"/>
+            <circle cx="75" cy="75" r="${r}" fill="none" stroke="${statusColor(promedio)}" stroke-width="14"
+              stroke-linecap="round" stroke-dasharray="${dash} ${c}"/>
+          </svg>
+          <div class="ring-label"><b>${promedio===null?'—':promedio+'%'}</b><span>cumplimiento</span></div>
+        </div>
+        <h4>Cumplimiento general</h4>
+        <p>Promedio de todas las auditorías registradas (Sí sobre Sí + No).</p>
+      </div>
+
+      <div class="kpi-secondary">
+        <div class="bar-card">
+          <h4>Cumplimiento por pregunta</h4>
+          <div class="bar-list">
+            ${porPregunta.map(p=>`
+              <div class="bar-line">
+                <div class="bl-top"><span class="nm">${escapeHtml(p.texto)}</span><span class="pc" style="color:${statusColor(p.pct)}">${p.pct===null?'—':p.pct+'%'}</span></div>
+                <div class="bar-track"><div class="bar-fill" style="width:${p.pct??0}%;background:${statusColor(p.pct)}"></div></div>
+              </div>`).join('')}
+          </div>
+        </div>
+        <div class="bar-card">
+          <h4>Cumplimiento por tienda</h4>
+          <div class="bar-list">
+            ${porTienda.map(t=>`
+              <div class="bar-line">
+                <div class="bl-top"><span class="nm">${statusEmoji(t.pct)} ${escapeHtml(t.tienda)}</span><span class="pc" style="color:${statusColor(t.pct)}">${t.pct===null?'—':t.pct+'%'}</span></div>
+                <div class="bar-track"><div class="bar-fill" style="width:${t.pct??0}%;background:${statusColor(t.pct)}"></div></div>
+              </div>`).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="section-title" style="margin:0;">Auditorías recientes</div>
+      <div class="toolbar-filters">
+        <button class="btn btn-ghost btn-sm" id="btn-export">⬇ Exportar CSV</button>
+        <button class="btn btn-ghost btn-sm" id="btn-clear-data" style="color:var(--bad)">🗑 Borrar historial</button>
+      </div>
+    </div>
+
+    <div class="card" style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr>
+          <th>Código</th><th>Tienda</th><th>Supervisor</th><th>Fecha</th><th>Cumplimiento</th><th></th>
+        </tr></thead>
+        <tbody>
+          ${recientes.map(a=>{
+            const pct = auditCompliance(a);
+            return `<tr>
+              <td style="font-family:var(--font-mono);font-size:12.5px;color:var(--ink-soft)">${a.id}</td>
+              <td>${escapeHtml(a.tienda)}</td>
+              <td>${escapeHtml(a.supervisor||'—')}</td>
+              <td>${fmtDate(a.fecha)}</td>
+              <td><span class="pill" style="background:${statusTint(pct)};color:${statusColor(pct)}">${statusEmoji(pct)} ${pct===null?'—':pct+'%'}</span></td>
+              <td><button class="btn-text" data-edit-id="${escapeHtml(a.id)}" style="padding:4px 6px;">✏️ Editar</button></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+/* =========================================================
+   VISTA: CONFIGURACIÓN
+   ========================================================= */
+function viewConfig(){
+  return `
+    <div class="page-head">
+      <div class="eyebrow">Ajustes</div>
+      <h1 class="page-title">Configuración</h1>
+      <p class="page-sub">Administra las tiendas, elementos y preguntas estándar que se usan en el formulario.</p>
+    </div>
+
+    <div class="card">
+      <div class="config-block">
+        <h4>Conexión con Google Sheets</h4>
+        <p>${sheetsConfigured()
+          ? 'Esta app ya viene conectada a la hoja compartida del equipo — toda auditoría enviada o editada por cualquier supervisor queda en el mismo consolidado. No necesitas tocar nada aquí.'
+          : 'Esta app todavía no tiene una hoja de Google Sheets conectada. Pega la URL de implementación (termina en <code>/exec</code>) de tu Apps Script para activar el consolidado compartido.'}</p>
+        <div class="add-elem-row" style="max-width:560px;">
+          <input type="text" id="webapp-url-input" placeholder="https://script.google.com/macros/s/XXXXX/exec" value="${escapeHtml(sheetsConfigured() ? CONFIG.webAppUrl : '')}">
+          <button class="btn btn-ghost btn-sm" id="btn-save-url">Guardar</button>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <button class="btn btn-ghost btn-sm" id="btn-test-conn">🔌 Probar conexión</button>
+          <span id="conn-status" style="font-size:12.5px;color:var(--ink-soft);"></span>
+        </div>
+      </div>
+
+      <div class="config-block">
+        <h4>Tiendas</h4>
+        <p>Lista de tiendas disponibles en el desplegable del formulario.</p>
+        <div class="chip-list" id="chips-tiendas">
+          ${DATA.tiendas.map((t,i)=>`<div class="chip">${escapeHtml(t)}<button data-remove="tienda" data-idx="${i}">✕</button></div>`).join('')}
+        </div>
+        <div class="add-elem-row" style="margin-top:14px;max-width:420px;">
+          <input type="text" id="new-tienda-input" placeholder="Nueva tienda, ej. Plaza Vea Bellavista">
+          <button class="btn btn-ghost btn-sm" id="btn-add-tienda">➕ Agregar</button>
+        </div>
+      </div>
+
+      <div class="config-block">
+        <h4>Elementos BTL estándar</h4>
+        <p>Elementos que se cargan por defecto en cada nueva auditoría.</p>
+        <div class="chip-list" id="chips-elementos">
+          ${DATA.elementos.map((t,i)=>`<div class="chip">${escapeHtml(t)}<button data-remove="elemento" data-idx="${i}">✕</button></div>`).join('')}
+        </div>
+        <div class="add-elem-row" style="margin-top:14px;max-width:420px;">
+          <input type="text" id="new-elemento-input" placeholder="Nuevo elemento, ej. Torre exhibidora">
+          <button class="btn btn-ghost btn-sm" id="btn-add-elemento">➕ Agregar</button>
+        </div>
+      </div>
+
+      <div class="config-block">
+        <h4>Datos</h4>
+        <p>Toda la información se guarda en el almacenamiento local de este navegador.</p>
+        <button class="btn btn-danger-text" id="btn-clear-all">Borrar todos los datos y restaurar valores por defecto</button>
+      </div>
+    </div>
+  `;
+}
+
+/* =========================================================
+   Eventos por vista
+   ========================================================= */
+function bindRouteEvents(route){
+  // navegación desde tiles/botones internos
+  document.querySelectorAll('[data-route]').forEach(el=>{
+    if(el.classList.contains('nav-item')) return; // ya enlazado
+    el.addEventListener('click', ()=> navigate(el.dataset.route));
+  });
+
+  if(route === 'formulario') bindFormulario();
+  if(route === 'dashboard') bindDashboard();
+  if(route === 'config') bindConfig();
+}
+
+function bindFormulario(){
+  const btnIniciar = document.getElementById('btn-iniciar');
+  if(btnIniciar){
+    btnIniciar.addEventListener('click', ()=>{
+      const tienda = document.getElementById('f-tienda').value;
+      const supervisor = document.getElementById('f-sup').value.trim();
+      const fecha = document.getElementById('f-fecha').value || todayISO();
+      draft = {
+        tienda, supervisor, fecha,
+        elementos: [...DATA.elementos],
+        respuestas: {}
+      };
+      DATA.preguntas.forEach(p => draft.respuestas[p.id] = {});
+      openAccordion = new Set([DATA.preguntas[0]?.id]);
+      render();
+    });
+    return;
+  }
+
+  // toggles de acordeón
+  document.querySelectorAll('[data-toggle]').forEach(head=>{
+    head.addEventListener('click', ()=>{
+      const qid = head.dataset.toggle;
+      if(openAccordion.has(qid)) openAccordion.delete(qid);
+      else openAccordion.add(qid);
+      render();
+    });
+  });
+
+  // botones de respuesta
+  document.querySelectorAll('.answer-group').forEach(group=>{
+    group.querySelectorAll('.ans-btn').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const qid = group.dataset.qid, el = group.dataset.el, v = btn.dataset.v;
+        draft.respuestas[qid][el] = v;
+        render();
+      });
+    });
+  });
+
+  // agregar elemento
+  const btnAdd = document.getElementById('btn-add-elem');
+  if(btnAdd){
+    btnAdd.addEventListener('click', ()=>{
+      const input = document.getElementById('new-elem-input');
+      const val = input.value.trim();
+      if(!val) return;
+      if(draft.elementos.includes(val)){ toast('Ese elemento ya está en la lista','⚠️'); return; }
+      draft.elementos.push(val);
+      render();
+      toast('Elemento agregado');
+    });
+  }
+
+  const btnCancelar = document.getElementById('btn-cancelar');
+  if(btnCancelar){
+    btnCancelar.addEventListener('click', ()=>{
+      const wasEditing = !!draft.editingId;
+      const msg = wasEditing ? '¿Descartar los cambios de esta edición?' : '¿Cancelar esta auditoría? Se perderá el progreso.';
+      if(confirm(msg)){
+        draft = null;
+        navigate(wasEditing ? 'dashboard' : 'inicio');
+      }
+    });
+  }
+
+  const btnEnviar = document.getElementById('btn-enviar');
+  if(btnEnviar && !btnEnviar.disabled){
+    btnEnviar.addEventListener('click', async ()=>{
+      const isEdit = !!draft.editingId;
+      const auditoria = {
+        id: isEdit ? draft.editingId : uid(),
+        tienda: draft.tienda,
+        supervisor: draft.supervisor,
+        fecha: draft.fecha,
+        elementos: draft.elementos,
+        respuestas: draft.respuestas,
+        creadoEn: isEdit ? (DATA.auditorias.find(a=>a.id===draft.editingId)?.creadoEn || Date.now()) : Date.now()
+      };
+
+      btnEnviar.disabled = true;
+      btnEnviar.textContent = 'Guardando…';
+
+      // Guarda localmente (caché) de inmediato
+      const idx = DATA.auditorias.findIndex(a => a.id === auditoria.id);
+      if(idx >= 0) DATA.auditorias[idx] = auditoria; else DATA.auditorias.push(auditoria);
+      saveData(DATA);
+
+      if(sheetsConfigured()){
+        const result = await pushAuditoriaToSheet(isEdit ? 'update' : 'create', auditoria);
+        if(result.ok){
+          await syncFromSheet(true);
+          toast(isEdit ? 'Cambios guardados en Google Sheets' : 'Auditoría enviada a Google Sheets');
+        }else{
+          toast('Guardado en este dispositivo, pero no se pudo sincronizar con Sheets','⚠️');
+        }
+      }else{
+        toast(isEdit ? 'Cambios guardados localmente' : 'Auditoría guardada localmente');
+      }
+
+      draft = null;
+      navigate('dashboard');
+    });
+  }
+}
+
+function bindDashboard(){
+  document.querySelectorAll('[data-edit-id]').forEach(btn=>{
+    btn.addEventListener('click', ()=> editAudit(btn.dataset.editId));
+  });
+
+  const btnExport = document.getElementById('btn-export');
+  if(btnExport) btnExport.addEventListener('click', exportCSV);
+
+  const btnClear = document.getElementById('btn-clear-data');
+  if(btnClear) btnClear.addEventListener('click', ()=>{
+    if(confirm('¿Borrar todo el historial de auditorías? Esta acción no se puede deshacer.')){
+      DATA.auditorias = [];
+      saveData(DATA);
+      render();
+      toast('Historial borrado');
+    }
+  });
+}
+
+function bindConfig(){
+  const btnSaveUrl = document.getElementById('btn-save-url');
+  if(btnSaveUrl) btnSaveUrl.addEventListener('click', ()=>{
+    const val = document.getElementById('webapp-url-input').value.trim();
+    CONFIG.webAppUrl = val;
+    saveConfig(CONFIG);
+    toast(val ? 'URL guardada' : 'Conexión desactivada, usando solo datos locales');
+    if(val) syncFromSheet(false);
+    else render();
+  });
+
+  const btnTest = document.getElementById('btn-test-conn');
+  if(btnTest) btnTest.addEventListener('click', async ()=>{
+    const url = document.getElementById('webapp-url-input').value.trim();
+    const status = document.getElementById('conn-status');
+    if(!url){ status.textContent = 'Ingresa una URL primero.'; status.style.color = 'var(--bad)'; return; }
+    status.textContent = 'Probando…'; status.style.color = 'var(--ink-soft)';
+    try{
+      await pingSheet(url);
+      status.textContent = '✓ Conexión exitosa';
+      status.style.color = 'var(--ok)';
+    }catch(e){
+      status.textContent = '✕ No se pudo conectar: revisa que la implementación sea "Cualquier usuario"';
+      status.style.color = 'var(--bad)';
+    }
+  });
+
+  document.querySelectorAll('[data-remove]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const type = btn.dataset.remove, idx = parseInt(btn.dataset.idx,10);
+      if(type==='tienda') DATA.tiendas.splice(idx,1);
+      if(type==='elemento') DATA.elementos.splice(idx,1);
+      saveData(DATA);
+      render();
+    });
+  });
+
+  const btnAddTienda = document.getElementById('btn-add-tienda');
+  if(btnAddTienda) btnAddTienda.addEventListener('click', ()=>{
+    const input = document.getElementById('new-tienda-input');
+    const val = input.value.trim();
+    if(!val) return;
+    if(DATA.tiendas.includes(val)){ toast('Esa tienda ya existe','⚠️'); return; }
+    DATA.tiendas.push(val);
+    saveData(DATA);
+    render();
+    toast('Tienda agregada');
+  });
+
+  const btnAddElemento = document.getElementById('btn-add-elemento');
+  if(btnAddElemento) btnAddElemento.addEventListener('click', ()=>{
+    const input = document.getElementById('new-elemento-input');
+    const val = input.value.trim();
+    if(!val) return;
+    if(DATA.elementos.includes(val)){ toast('Ese elemento ya existe','⚠️'); return; }
+    DATA.elementos.push(val);
+    saveData(DATA);
+    render();
+    toast('Elemento agregado');
+  });
+
+  const btnClearAll = document.getElementById('btn-clear-all');
+  if(btnClearAll) btnClearAll.addEventListener('click', ()=>{
+    if(confirm('¿Restaurar todos los valores por defecto? Se perderán tiendas, elementos y auditorías guardadas.')){
+      DATA = structuredClone(DEFAULT_DATA);
+      saveData(DATA);
+      render();
+      toast('Datos restaurados');
+    }
+  });
+}
+
+/* =========================================================
+   Exportar CSV
+   ========================================================= */
+function exportCSV(){
+  const rows = [['Codigo','Tienda','Supervisor','Fecha','Pregunta','Elemento','Respuesta']];
+  DATA.auditorias.forEach(a=>{
+    DATA.preguntas.forEach(p=>{
+      (a.elementos||[]).forEach(el=>{
+        const v = a.respuestas[p.id]?.[el] || '';
+        rows.push([a.id, a.tienda, a.supervisor||'', a.fecha, p.texto, el, v]);
+      });
+    });
+  });
+  const csv = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `auditorias_btl_${todayISO()}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('CSV exportado');
+}
+</script>
+</body>
+</html>
