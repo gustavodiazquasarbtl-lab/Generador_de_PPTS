@@ -457,13 +457,12 @@ const STORAGE_KEY = 'btl_auditoria_data_v1';
 const DEFAULT_DATA = {
   tiendas: [
     'Plaza Vea Primavera','Plaza Vea Risso','Plaza Vea Caminos del Inca',
-    'Plaza Vea San Miguel','Plaza Vea Salaverry','Vivanda La Molina',
-    'Vivanda Miraflores','Makro Ate','Makro Chorrillos'
+    'Plaza Vea San Miguel','Plaza Vea Salaverry'
   ],
-  elementos: ['Jalavista 15x60','Jalavista 30x90','Ganchera','Collarín','Floor Graphic'],
+  elementos: ['Jalavista 15x60','Jalavista 30x90','Ganchera'],
   preguntas: [
     {id:'estado',      texto:'¿El elemento se encuentra en buen estado?'},
-    {id:'instalacion', texto:'¿La instalación es correcta según el layout?'},
+    {id:'instalacion', texto:'¿La instalación es correcta según planograma?'},
     {id:'limpieza',    texto:'¿El elemento está limpio y presentable?'},
     {id:'visibilidad', texto:'¿Tiene buena visibilidad para el cliente?'},
     {id:'senaletica',  texto:'¿La señalética de precios está correcta?'}
@@ -707,9 +706,9 @@ function viewInicio(){
 
   return `
     <div class="hero">
-      <div class="hero-tag">Formato Impulso · Control BTL</div>
-      <h1>Auditoría de elementos BTL en tienda</h1>
-      <p>Registra el estado de jalavistas, gancheras, collarines y demás elementos de exhibición por tienda, y sigue el cumplimiento en tiempo real.</p>
+      <div class="hero-tag">Control BTL</div>
+      <h1>Auditoría de elementos BTL en tiendas</h1>
+      <p>Registra el estado de elementos por tienda, y sigue el cumplimiento en tiempo real.</p>
       <div class="hero-stats">
         <div class="hero-stat"><b>${total}</b><span>Auditorías registradas</span></div>
         <div class="hero-stat"><b>${promedio===null?'—':promedio+'%'}</b><span>Cumplimiento promedio</span></div>
@@ -758,7 +757,7 @@ function viewInstrucciones(){
         </div></div>
         <div class="step"><div class="step-n">2</div><div class="step-body">
           <h4>Revisa la lista de elementos</h4>
-          <p>Se carga la lista estándar de elementos BTL (jalavistas, ganchera, collarín, floor graphic). Puedes agregar elementos adicionales propios de la tienda si es necesario.</p>
+          <p>Se carga la lista estándar de elementos BTL (jalavistas, ganchera, exhibiciones diferenciadas). Puedes agregar elementos adicionales propios de la tienda si es necesario.</p>
         </div></div>
         <div class="step"><div class="step-n">3</div><div class="step-body">
           <h4>Responde cada pregunta por elemento</h4>
@@ -912,7 +911,7 @@ function viewFormulario(){
     </div>
 
     <div class="add-elem-row">
-      <input type="text" id="new-elem-input" placeholder="Agregar elemento (ej. Torre exhibidora)">
+      <input type="text" id="new-elem-input" placeholder="Agregar elemento (ej. Ganchera)">
       <button class="btn btn-ghost btn-sm" id="btn-add-elem">➕ Agregar elemento</button>
     </div>
 
@@ -1062,14 +1061,14 @@ function viewConfig(){
     <div class="page-head">
       <div class="eyebrow">Ajustes</div>
       <h1 class="page-title">Configuración</h1>
-      <p class="page-sub">Administra las tiendas, elementos y preguntas estándar que se usan en el formulario.</p>
+      <p class="page-sub">Administra las tiendas, elementos y preguntas que se usan en el formulario.</p>
     </div>
 
     <div class="card">
       <div class="config-block">
         <h4>Conexión con Google Sheets</h4>
         <p>${sheetsConfigured()
-          ? 'Esta app ya viene conectada a la hoja compartida del equipo — toda auditoría enviada o editada por cualquier supervisor queda en el mismo consolidado. No necesitas tocar nada aquí.'
+          ? 'Esta app ya viene conectada a la hoja compartida del equipo — toda auditoría enviada o editada por cualquier supervisor queda en el mismo consolidado.'
           : 'Esta app todavía no tiene una hoja de Google Sheets conectada. Pega la URL de implementación (termina en <code>/exec</code>) de tu Apps Script para activar el consolidado compartido.'}</p>
         <div class="add-elem-row" style="max-width:560px;">
           <input type="text" id="webapp-url-input" placeholder="https://script.google.com/macros/s/XXXXX/exec" value="${escapeHtml(sheetsConfigured() ? CONFIG.webAppUrl : '')}">
@@ -1100,7 +1099,7 @@ function viewConfig(){
           ${DATA.elementos.map((t,i)=>`<div class="chip">${escapeHtml(t)}<button data-remove="elemento" data-idx="${i}">✕</button></div>`).join('')}
         </div>
         <div class="add-elem-row" style="margin-top:14px;max-width:420px;">
-          <input type="text" id="new-elemento-input" placeholder="Nuevo elemento, ej. Torre exhibidora">
+          <input type="text" id="new-elemento-input" placeholder="Nuevo elemento, ej. Ganchera">
           <button class="btn btn-ghost btn-sm" id="btn-add-elemento">➕ Agregar</button>
         </div>
       </div>
