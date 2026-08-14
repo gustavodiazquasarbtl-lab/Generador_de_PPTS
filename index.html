@@ -9,6 +9,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
     --navy-950:#0a1738;
@@ -259,6 +260,61 @@
     text-transform:uppercase;letter-spacing:.6px;
   }
   .divider-label::before, .divider-label::after{content:'';flex:1;height:1px;background:var(--border);}
+
+  /* Mode selector */
+  .mode-select-card h2{font-size:16px;margin:0 0 3px;font-weight:700;}
+  .mode-select-card .hint{margin:0 0 16px;}
+  .mode-options{display:flex;gap:14px;flex-wrap:wrap;}
+  .mode-card{
+    flex:1;min-width:240px;border:2px solid var(--border);border-radius:var(--radius-md);
+    padding:20px 18px;cursor:pointer;transition:.15s;background:#fafbfe;text-align:left;
+  }
+  .mode-card:hover{border-color:var(--muted-2);box-shadow:var(--shadow-sm);}
+  .mode-card.selected{border-color:var(--accent);background:var(--accent-soft);box-shadow:var(--shadow-md);}
+  .mode-card .mode-icon{font-size:26px;margin-bottom:8px;}
+  .mode-card .mode-title{font-size:14.5px;font-weight:700;color:var(--navy-900);margin-bottom:5px;}
+  .mode-card .mode-desc{font-size:12px;color:var(--muted);line-height:1.5;}
+
+  /* Accordion bucket cards */
+  .bucket-card{padding:0;overflow:hidden;}
+  .bucket-header{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:13px 16px;cursor:pointer;user-select:none;transition:.12s;background:#fff;
+  }
+  .bucket-header:hover{background:#fafbfe;}
+  .bucket-header .bh-left{display:flex;align-items:center;gap:10px;min-width:0;}
+  .bucket-header .chevron{
+    font-size:11px;color:var(--muted-2);transition:transform .15s;flex-shrink:0;
+    width:16px;text-align:center;
+  }
+  .bucket-header.expanded .chevron{transform:rotate(90deg);}
+  .bucket-header .bh-name{font-size:13.5px;font-weight:700;color:var(--navy-900);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .bucket-body{
+    padding:0 16px 16px;border-top:1px solid var(--border);display:none;background:#fcfcfe;
+  }
+  .bucket-body.expanded{display:block;padding-top:14px;}
+  .bucket-body .upload-zone{background:#fff;}
+
+  .clear-btn{
+    border:1.5px solid #f3c1c6;background:#fff;color:var(--danger);border-radius:var(--radius-sm);
+    padding:6px 11px;font-size:11.5px;font-weight:700;cursor:pointer;transition:.12s;
+    display:inline-flex;align-items:center;gap:5px;flex-shrink:0;
+  }
+  .clear-btn:hover{background:var(--danger-soft);}
+  .clear-btn-mini{
+    border:none;background:transparent;color:var(--danger);font-size:12px;cursor:pointer;
+    padding:2px 4px;border-radius:5px;flex-shrink:0;
+  }
+  .clear-btn-mini:hover{background:var(--danger-soft);}
+
+  .section-toolbar{display:flex;justify-content:flex-end;margin:-6px 0 12px;}
+
+  .paste-btn{
+    border:1.5px solid var(--border-strong);background:#fff;color:var(--navy-900);border-radius:var(--radius-sm);
+    padding:0 14px;height:44px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.12s;flex-shrink:0;
+    display:inline-flex;align-items:center;gap:5px;
+  }
+  .paste-btn:hover{border-color:var(--accent);color:var(--accent);}
 </style>
 </head>
 <body>
@@ -276,13 +332,22 @@
 
 <div class="wrap">
 
-  <div class="steps-nav">
-    <div class="step-pill"><span class="n">1</span> Título y diseño</div>
-    <div class="step-pill"><span class="n">2</span> Organización</div>
-    <div class="step-pill"><span class="n">3</span> Títulos</div>
-    <div class="step-pill"><span class="n">4</span> Fotos</div>
-    <div class="step-pill"><span class="n">5</span> Descarga</div>
-    <div class="step-pill"><span class="n">6</span> Reformatear PPT</div>
+  <!-- 0. Selector de modo -->
+  <div class="card mode-select-card">
+    <h2>¿Qué quieres hacer?</h2>
+    <p class="hint" style="margin-left:0;">Elige un modo para continuar. Puedes cambiarlo cuando quieras.</p>
+    <div class="mode-options">
+      <div class="mode-card" data-mode="nueva" onclick="selectAppMode('nueva')">
+        <div class="mode-icon">🆕</div>
+        <div class="mode-title">Generar nueva presentación</div>
+        <div class="mode-desc">Arma la presentación desde cero subiendo tus fotos de auditoría, organizadas por tienda y/o elemento.</div>
+      </div>
+      <div class="mode-card" data-mode="existente" onclick="selectAppMode('existente')">
+        <div class="mode-icon">📤</div>
+        <div class="mode-title">Aplicar formato a una presentación existente</div>
+        <div class="mode-desc">Sube un PPT que ya armaste con tus fotos y aplícale el diseño corporativo automáticamente.</div>
+      </div>
+    </div>
   </div>
 
   <!-- 1. Título y diseño -->
@@ -310,6 +375,34 @@ AGOSTO - 2026</textarea>
     </div>
   </div>
 
+  <div id="flowExistente" style="display:none;">
+  <!-- Reformatear PPT existente -->
+  <div class="card">
+    <h2><span class="num">2</span> Aplicar formato a una presentación ya existente</h2>
+    <p class="hint">Sube un PPT que ya armaste (con tus fotos) y se le aplicará el diseño elegido en el paso 1. Las fotos de fondo/plantilla del archivo original se detectan y se descartan automáticamente; solo se conservan las fotos de contenido.</p>
+
+    <div class="upload-zone" id="reskinDropzone">
+      <div class="icon">📊</div>
+      <div class="title">Subir presentación (.pptx)</div>
+      <div class="desc">Click o arrastra tu archivo</div>
+      <input type="file" id="reskinInput" accept=".pptx">
+    </div>
+
+    <div class="checkbox-line">
+      <input type="checkbox" id="reskinAddCoverGracias" checked>
+      <div><div class="lbl">Agregar portada y diapositiva de "Gracias"</div><div class="sub">Usa el título definido en el paso 1</div></div>
+    </div>
+
+    <div class="summary-line" id="reskinSummary">Ningún archivo cargado.</div>
+
+    <div class="actions-row">
+      <button class="btn primary" id="btnReskinPptx" onclick="generateReskin('pptx')" disabled>Aplicar formato y descargar PPTX</button>
+      <button class="btn primary" id="btnReskinPdf" onclick="generateReskin('pdf')" disabled>Aplicar formato y descargar PDF</button>
+    </div>
+  </div>
+  </div>
+
+  <div id="flowNueva" style="display:none;">
   <!-- 2. Organización -->
   <div class="card">
     <h2><span class="num">2</span> Organización de las diapositivas</h2>
@@ -322,13 +415,14 @@ AGOSTO - 2026</textarea>
     <div id="tiendasBlock" class="indent-block" style="display:none;">
       <label class="field-label">Tiendas a incluir</label>
       <div class="chip-input-row">
-        <textarea id="tiendaInput" placeholder="Una tienda por línea. Ej:&#10;Salaverry&#10;Higuereta&#10;Jockey Plaza"></textarea>
+        <textarea id="tiendaInput" placeholder="Una tienda por línea. Ej:&#10;Salaverry&#10;Higuereta&#10;Jockey Plaza" spellcheck="false"></textarea>
+        <button class="paste-btn" onclick="pasteIntoTextarea('tiendaInput')" title="Pegar desde el portapapeles">📋 Pegar</button>
         <button class="add-btn" onclick="addTiendasFromTextarea()">Agregar</button>
       </div>
       <div class="list-tools-row">
-        <button onclick="downloadListTemplate('tiendas')">⬇ Descargar plantilla</button>
-        <button onclick="triggerListUpload('tiendas')">⬆ Subir lista desde archivo</button>
-        <input type="file" id="tiendaFileInput" accept=".txt,.csv" style="display:none" onchange="handleListFile('tiendas', this)">
+        <button onclick="downloadListTemplate('tiendas')">⬇ Descargar plantilla Excel</button>
+        <button onclick="triggerListUpload('tiendas')">⬆ Subir lista desde Excel</button>
+        <input type="file" id="tiendaFileInput" accept=".xlsx,.xls,.csv,.txt" style="display:none" onchange="handleListFile('tiendas', this)">
       </div>
       <div class="chips" id="tiendaChips"></div>
     </div>
@@ -340,13 +434,14 @@ AGOSTO - 2026</textarea>
     <div id="elementosBlock" class="indent-block" style="display:none;">
       <label class="field-label">Elementos a incluir</label>
       <div class="chip-input-row">
-        <textarea id="elementoInput" placeholder="Un elemento por línea. Ej:&#10;CENEFA GILLETTE&#10;CENEFA OLD SPICE&#10;CENEFA SECRET"></textarea>
+        <textarea id="elementoInput" placeholder="Un elemento por línea. Ej:&#10;CENEFA GILLETTE&#10;CENEFA OLD SPICE&#10;CENEFA SECRET" spellcheck="false"></textarea>
+        <button class="paste-btn" onclick="pasteIntoTextarea('elementoInput')" title="Pegar desde el portapapeles">📋 Pegar</button>
         <button class="add-btn" onclick="addElementosFromTextarea()">Agregar</button>
       </div>
       <div class="list-tools-row">
-        <button onclick="downloadListTemplate('elementos')">⬇ Descargar plantilla</button>
-        <button onclick="triggerListUpload('elementos')">⬆ Subir lista desde archivo</button>
-        <input type="file" id="elementoFileInput" accept=".txt,.csv" style="display:none" onchange="handleListFile('elementos', this)">
+        <button onclick="downloadListTemplate('elementos')">⬇ Descargar plantilla Excel</button>
+        <button onclick="triggerListUpload('elementos')">⬆ Subir lista desde Excel</button>
+        <input type="file" id="elementoFileInput" accept=".xlsx,.xls,.csv,.txt" style="display:none" onchange="handleListFile('elementos', this)">
       </div>
       <div class="chips" id="elementoChips"></div>
     </div>
@@ -374,6 +469,9 @@ AGOSTO - 2026</textarea>
   <div class="card">
     <h2><span class="num">4</span> Subir fotos</h2>
     <p class="hint" id="uploadHint">Selecciona primero la organización (paso 2) para ver las opciones de carga.</p>
+    <div class="section-toolbar">
+      <button class="clear-btn" onclick="clearAllPhotos()">🗑 Vaciar todas las fotos cargadas</button>
+    </div>
     <div id="uploadArea"></div>
     <div id="unclassifiedArea"></div>
     <div id="invalidArea"></div>
@@ -403,33 +501,7 @@ AGOSTO - 2026</textarea>
     <div class="log" id="logBox"></div>
     <div class="preview-box" id="previewBox"></div>
   </div>
-
-  <div class="divider-label">También puedes</div>
-
-  <!-- 6. Reformatear PPT existente -->
-  <div class="card">
-    <h2><span class="num">6</span> Aplicar formato a una presentación ya existente</h2>
-    <p class="hint">Sube un PPT que ya armaste (con tus fotos) y se le aplicará el diseño elegido en el paso 1. Las fotos de fondo/plantilla del archivo original se detectan y se descartan automáticamente; solo se conservan las fotos de contenido.</p>
-
-    <div class="upload-zone" id="reskinDropzone">
-      <div class="icon">📊</div>
-      <div class="title">Subir presentación (.pptx)</div>
-      <div class="desc">Click o arrastra tu archivo</div>
-      <input type="file" id="reskinInput" accept=".pptx">
-    </div>
-
-    <div class="checkbox-line">
-      <input type="checkbox" id="reskinAddCoverGracias" checked>
-      <div><div class="lbl">Agregar portada y diapositiva de "Gracias"</div><div class="sub">Usa el título definido en el paso 1</div></div>
-    </div>
-
-    <div class="summary-line" id="reskinSummary">Ningún archivo cargado.</div>
-
-    <div class="actions-row">
-      <button class="btn primary" id="btnReskinPptx" onclick="generateReskin('pptx')" disabled>Aplicar formato y descargar PPTX</button>
-      <button class="btn primary" id="btnReskinPdf" onclick="generateReskin('pdf')" disabled>Aplicar formato y descargar PDF</button>
-    </div>
-  </div>
+  </div><!-- /flowNueva -->
 
   <p class="footer-note">Quasar BTL · Generador interno de auditorías fotográficas</p>
 </div>
@@ -446,14 +518,46 @@ const D2_BG = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBA
 /* ===================== STATE ===================== */
 const state = {
   design: 'd1',
+  appMode: 'nueva',    // 'nueva' | 'existente'
   tiendas: [],
   elementos: [],
   photos: [],          // flat mode only
   buckets: {},         // key "tienda||elemento" -> array of photo objects (PERSISTS across edits)
   unclassified: [],    // {rec, tienda, elemento, needTienda, needElemento}
   invalid: [],         // {name, reason}
-  mode: 'flat'
+  mode: 'flat',
+  expanded: new Set()  // ids of expanded accordion cards
 };
+
+/* ===================== APP MODE (nueva / existente) ===================== */
+function selectAppMode(mode){
+  state.appMode = mode;
+  document.querySelectorAll('.mode-card').forEach(el=>{
+    el.classList.toggle('selected', el.dataset.mode === mode);
+  });
+  document.getElementById('flowNueva').style.display = mode === 'nueva' ? '' : 'none';
+  document.getElementById('flowExistente').style.display = mode === 'existente' ? '' : 'none';
+}
+
+/* ===================== CLIPBOARD PASTE HELPER ===================== */
+async function pasteIntoTextarea(id){
+  const ta = document.getElementById(id);
+  try{
+    const text = await navigator.clipboard.readText();
+    if(!text){ ta.focus(); return; }
+    const start = ta.selectionStart ?? ta.value.length;
+    const end = ta.selectionEnd ?? ta.value.length;
+    const before = ta.value.slice(0, start);
+    const after = ta.value.slice(end);
+    let sep = '';
+    if(before && !before.endsWith('\n')) sep = '\n';
+    ta.value = before + sep + text + after;
+    ta.focus();
+  }catch(err){
+    ta.focus();
+    alert('No se pudo acceder al portapapeles automáticamente (el navegador bloqueó el permiso). Haz clic dentro del cuadro de texto y usa Ctrl+V para pegar manualmente.');
+  }
+}
 
 /* ===================== DESIGN THEMES ===================== */
 const THEMES = {
@@ -665,6 +769,35 @@ function pushToBucket(tienda, elemento, rec){
 function bucketCount(tienda, elemento){
   return (state.buckets[bucketKey(tienda, elemento)] || []).length;
 }
+function clearBucket(tienda, elemento){
+  const label = [tienda, elemento].filter(Boolean).join(' / ');
+  if(!confirm('¿Eliminar las fotos cargadas de "'+label+'"? Esta acción no se puede deshacer.')) return;
+  delete state.buckets[bucketKey(tienda, elemento)];
+  rebuildUploadArea();
+  log('Fotos eliminadas: ' + label + '.');
+}
+function clearTiendaAll(tienda){
+  if(!confirm('¿Eliminar TODAS las fotos cargadas de "'+tienda+'" (todos sus elementos)? Esta acción no se puede deshacer.')) return;
+  Object.keys(state.buckets).forEach(k=>{ if(k.split('||')[0]===tienda) delete state.buckets[k]; });
+  rebuildUploadArea();
+  log('Fotos eliminadas: todas las de ' + tienda + '.');
+}
+function clearAllPhotos(){
+  const n = totalPhotoCount();
+  if(n===0){ alert('No hay fotos cargadas.'); return; }
+  if(!confirm('¿Eliminar las '+n+' fotos cargadas en la app? Esta acción no se puede deshacer.')) return;
+  state.buckets = {};
+  state.photos = [];
+  state.unclassified = [];
+  state.invalid = [];
+  rebuildUploadArea();
+  log('Se vaciaron todas las fotos cargadas.');
+}
+function toggleExpand(id){
+  if(state.expanded.has(id)) state.expanded.delete(id);
+  else state.expanded.add(id);
+  rebuildUploadArea();
+}
 
 /* ===================== TIENDAS / ELEMENTOS: bulk add, edit, remove ===================== */
 function parseBulkLines(text){
@@ -826,12 +959,18 @@ function startEditChip(chipEl, currentVal, onSave){
   inp.select();
 }
 
-/* ===================== TEMPLATE DOWNLOAD / UPLOAD FOR LISTS ===================== */
+/* ===================== TEMPLATE DOWNLOAD / UPLOAD FOR LISTS (Excel) ===================== */
 function downloadListTemplate(kind){
+  const header = kind === 'tiendas' ? 'Tienda' : 'Elemento';
   const sample = kind === 'tiendas'
-    ? 'Salaverry\nHiguereta\nJockey Plaza\nLa Molina\nCortijo\nSucre\n'
-    : 'CENEFA GILLETTE\nCENEFA OLD SPICE\nCENEFA SECRET\nBANDEJA PANTENE\n';
-  downloadBlob(new Blob([sample], {type:'text/plain;charset=utf-8'}), 'plantilla_'+kind+'.txt');
+    ? ['Salaverry','Higuereta','Jockey Plaza','La Molina','Cortijo','Sucre']
+    : ['CENEFA GILLETTE','CENEFA OLD SPICE','CENEFA SECRET','BANDEJA PANTENE'];
+  const wsData = [[header], ...sample.map(v=>[v])];
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!cols'] = [{wch:28}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, kind === 'tiendas' ? 'Tiendas' : 'Elementos');
+  XLSX.writeFile(wb, 'plantilla_'+kind+'.xlsx');
 }
 function triggerListUpload(kind){
   document.getElementById(kind==='tiendas' ? 'tiendaFileInput' : 'elementoFileInput').click();
@@ -839,16 +978,42 @@ function triggerListUpload(kind){
 function handleListFile(kind, inputEl){
   const file = inputEl.files[0];
   if(!file) return;
-  const reader = new FileReader();
-  reader.onload = ()=>{
-    const n = kind==='tiendas' ? addTiendasBulk(reader.result) : addElementosBulk(reader.result);
-    renderChips();
-    rebuildUploadArea();
-    log(n + ' ' + kind + ' agregado(s) desde "' + file.name + '".');
-    inputEl.value = '';
-  };
-  reader.onerror = ()=> log('No se pudo leer el archivo "'+file.name+'".');
-  reader.readAsText(file, 'UTF-8');
+  const isExcel = /\.(xlsx|xls)$/i.test(file.name);
+  if(isExcel){
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      try{
+        const wb = XLSX.read(new Uint8Array(reader.result), {type:'array'});
+        const firstSheet = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(firstSheet, {header:1});
+        const values = rows
+          .map(r=> (r && r[0]!=null) ? String(r[0]).trim() : '')
+          .filter(v=> v && normalize(v)!=='tienda' && normalize(v)!=='elemento');
+        const text = values.join('\n');
+        const n = kind==='tiendas' ? addTiendasBulk(text) : addElementosBulk(text);
+        renderChips();
+        rebuildUploadArea();
+        log(n + ' ' + kind + ' agregado(s) desde "' + file.name + '".');
+      }catch(err){
+        log('No se pudo leer el Excel "'+file.name+'": ' + errMsg(err));
+        alert('No se pudo leer el archivo Excel. Verifica que sea un .xlsx válido.');
+      }
+      inputEl.value = '';
+    };
+    reader.onerror = ()=>{ log('No se pudo leer el archivo "'+file.name+'".'); inputEl.value=''; };
+    reader.readAsArrayBuffer(file);
+  } else {
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      const n = kind==='tiendas' ? addTiendasBulk(reader.result) : addElementosBulk(reader.result);
+      renderChips();
+      rebuildUploadArea();
+      log(n + ' ' + kind + ' agregado(s) desde "' + file.name + '".');
+      inputEl.value = '';
+    };
+    reader.onerror = ()=>{ log('No se pudo leer el archivo "'+file.name+'".'); inputEl.value=''; };
+    reader.readAsText(file, 'UTF-8');
+  }
 }
 
 /* ===================== ORG MODE ===================== */
@@ -925,51 +1090,105 @@ function buildBucketUploadZone(tienda, elemento){
   const key = bucketKey(tienda, elemento);
   const label = tienda || elemento;
   const n = bucketCount(tienda, elemento);
+  const accId = 'b_' + cssId(key);
+  const isOpen = state.expanded.has(accId);
+
   const card = document.createElement('div');
   card.className = 'bucket-card';
-  card.innerHTML = '<div class="bucket-title"><span>'+escapeHtml(label)+'</span><span class="count-badge'+(n>0?' has':'')+'" id="count_'+cssId(key)+'">'+n+' fotos</span></div>';
+
+  const header = document.createElement('div');
+  header.className = 'bucket-header' + (isOpen ? ' expanded' : '');
+  header.innerHTML = '<div class="bh-left"><span class="chevron">\u25B8</span><span class="bh-name">'+escapeHtml(label)+'</span></div>' +
+    '<span class="count-badge'+(n>0?' has':'')+'" id="count_'+cssId(key)+'">'+n+' fotos</span>';
+  header.onclick = ()=> toggleExpand(accId);
+  card.appendChild(header);
+
+  const body = document.createElement('div');
+  body.className = 'bucket-body' + (isOpen ? ' expanded' : '');
+
+  if(n>0){
+    const clearBtn = document.createElement('button');
+    clearBtn.className = 'clear-btn';
+    clearBtn.textContent = '🗑 Vaciar fotos de ' + label;
+    clearBtn.style.marginBottom = '10px';
+    clearBtn.onclick = (e)=>{ e.stopPropagation(); clearBucket(tienda, elemento); };
+    body.appendChild(clearBtn);
+  }
+
   const wrap = document.createElement('div');
   wrap.className = 'upload-zone';
   wrap.innerHTML = '<div class="icon">\uD83D\uDCF7</div><div class="title">Subir fotos de '+escapeHtml(label)+'</div><div class="desc">Click o arrastra imágenes — se suman a las ya cargadas</div>';
   const input = document.createElement('input');
   input.type = 'file'; input.accept = 'image/*'; input.multiple = true;
   wrap.appendChild(input);
-  wrap.onclick = ()=>input.click();
+  wrap.onclick = (e)=>{ e.stopPropagation(); input.click(); };
   setupDrop(wrap, input);
   input.onchange = async ()=>{
     await processFilesToBucket(Array.from(input.files), tienda, elemento);
   };
-  card.appendChild(wrap);
+  body.appendChild(wrap);
+  card.appendChild(body);
   return card;
 }
 
 function buildFolderUploadZone(tienda){
   const totalForTienda = state.elementos.reduce((s,e)=> s + bucketCount(tienda,e), 0);
+  const accId = 'f_' + cssId(tienda);
+  const isOpen = state.expanded.has(accId);
+
   const card = document.createElement('div');
   card.className = 'bucket-card';
-  card.innerHTML = '<div class="bucket-title"><span>'+escapeHtml(tienda)+'</span><span class="count-badge'+(totalForTienda>0?' has':'')+'" id="count_'+cssId(bucketKey(tienda,null))+'">'+totalForTienda+' fotos</span></div>';
+
+  const header = document.createElement('div');
+  header.className = 'bucket-header' + (isOpen ? ' expanded' : '');
+  header.innerHTML = '<div class="bh-left"><span class="chevron">\u25B8</span><span class="bh-name">'+escapeHtml(tienda)+'</span></div>' +
+    '<span class="count-badge'+(totalForTienda>0?' has':'')+'" id="count_'+cssId(bucketKey(tienda,null))+'">'+totalForTienda+' fotos</span>';
+  header.onclick = ()=> toggleExpand(accId);
+  card.appendChild(header);
+
+  const body = document.createElement('div');
+  body.className = 'bucket-body' + (isOpen ? ' expanded' : '');
+
+  if(totalForTienda>0){
+    const clearBtn = document.createElement('button');
+    clearBtn.className = 'clear-btn';
+    clearBtn.textContent = '🗑 Vaciar todas las fotos de ' + tienda;
+    clearBtn.style.marginBottom = '10px';
+    clearBtn.onclick = (e)=>{ e.stopPropagation(); clearTiendaAll(tienda); };
+    body.appendChild(clearBtn);
+  }
+
   const wrap = document.createElement('div');
   wrap.className = 'upload-zone';
   wrap.innerHTML = '<div class="icon">\uD83D\uDDC2\uFE0F</div><div class="title">Subir carpeta de '+escapeHtml(tienda)+'</div><div class="desc">Debe contener subcarpetas con el nombre de cada elemento</div>';
   const input = document.createElement('input');
   input.type = 'file'; input.webkitdirectory = true; input.multiple = true;
   wrap.appendChild(input);
-  wrap.onclick = ()=>input.click();
+  wrap.onclick = (e)=>{ e.stopPropagation(); input.click(); };
   input.onchange = async ()=>{
     await processFolderForTienda(Array.from(input.files), tienda);
   };
-  card.appendChild(wrap);
+  body.appendChild(wrap);
 
   const list = document.createElement('div');
+  list.style.marginTop = '6px';
   state.elementos.forEach(e=>{
     const n = bucketCount(tienda, e);
     const row = document.createElement('div');
     row.className = 'elemento-sub';
     row.id = 'row_' + cssId(bucketKey(tienda, e));
-    row.innerHTML = '<span class="name">'+escapeHtml(e)+'</span><span class="status'+(n>0?' has':'')+'">'+n+' fotos</span>';
+    row.innerHTML = '<span class="name">'+escapeHtml(e)+'</span>' +
+      '<span style="display:flex;align-items:center;gap:6px;">' +
+      '<span class="status'+(n>0?' has':'')+'">'+n+' fotos</span>' +
+      (n>0 ? '<button class="clear-btn-mini" title="Vaciar" data-tienda="'+escapeHtml(tienda)+'" data-elemento="'+escapeHtml(e)+'">✕</button>' : '') +
+      '</span>';
+    if(n>0){
+      row.querySelector('.clear-btn-mini').onclick = (ev)=>{ ev.stopPropagation(); clearBucket(tienda, e); };
+    }
     list.appendChild(row);
   });
-  card.appendChild(list);
+  body.appendChild(list);
+  card.appendChild(body);
   return card;
 }
 
