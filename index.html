@@ -1148,6 +1148,10 @@ AGOSTO - 2026</textarea>
           <label class="field-label" style="margin-bottom:4px;">Tamaño (pt)</label>
           <input type="text" inputmode="numeric" id="efpFontSize" onchange="applyFontChange()" oninput="applyFontChange()">
         </div>
+        <div style="max-width:70px;" id="efpColorWrap">
+          <label class="field-label" style="margin-bottom:4px;">Color</label>
+          <input type="color" id="efpFontColor" onchange="applyFontChange()" oninput="applyFontChange()" style="width:100%;height:38px;padding:2px;">
+        </div>
       </div>
     </div>
     <div class="editor-bottom-actions">
@@ -1257,12 +1261,12 @@ const FONT_CHOICES = ['Arial','Calibri','Verdana','Georgia','Times New Roman','T
 function deepClone(o){ return JSON.parse(JSON.stringify(o)); }
 
 const DEFAULT_LAYOUT = {
-  coverTitle: {x:5.0, y:5.1, w:8.0, h:1.6, fontSize:20, fontFamily:'Arial'},
-  storeTitle: {x:0, y:0.55, w:13.333, h:0.95, fontSize:36, fontFamily:'Arial'},
+  coverTitle: {x:5.0, y:5.1, w:8.0, h:1.6, fontSize:20, fontFamily:'Arial', color:null},
+  storeTitle: {x:0, y:0.55, w:13.333, h:0.95, fontSize:36, fontFamily:'Arial', color:null},
   storeTable: {x:4.08, y:2.55, w:5.16, fontSize:13, fontFamily:'Arial'},
-  contentTitle: {x:0.69, y:0.28, w:11.94, h:0.64, fontSize:22, fontFamily:'Arial'},
-  footer: {x:3.889, y:6.85, w:5.556, h:0.34, fontSize:12, fontFamily:'Arial'},
-  graciasTitle: {x:0.6, y:0.5, w:7.5, h:1.2, fontSize:32, fontFamily:'Arial'},
+  contentTitle: {x:0.69, y:0.28, w:11.94, h:0.64, fontSize:22, fontFamily:'Arial', color:null},
+  footer: {x:3.889, y:6.85, w:5.556, h:0.34, fontSize:12, fontFamily:'Arial', color:null},
+  graciasTitle: {x:0.6, y:0.5, w:7.5, h:1.2, fontSize:32, fontFamily:'Arial', color:null},
   photos: {
     2: {
       slots: [
@@ -1270,8 +1274,8 @@ const DEFAULT_LAYOUT = {
         {x:6.944, y:1.75, w:3.333, h:4.35}
       ],
       dates: [
-        {x:3.055, y:6.15, w:3.333, h:0.34, fontSize:12, fontFamily:'Arial'},
-        {x:6.944, y:6.15, w:3.333, h:0.34, fontSize:12, fontFamily:'Arial'}
+        {x:3.055, y:6.15, w:3.333, h:0.34, fontSize:12, fontFamily:'Arial', color:null},
+        {x:6.944, y:6.15, w:3.333, h:0.34, fontSize:12, fontFamily:'Arial', color:null}
       ]
     },
     3: {
@@ -1281,9 +1285,9 @@ const DEFAULT_LAYOUT = {
         {x:8.756, y:1.75, w:3.578, h:4.35}
       ],
       dates: [
-        {x:1.000, y:6.15, w:3.578, h:0.34, fontSize:12, fontFamily:'Arial'},
-        {x:4.878, y:6.15, w:3.578, h:0.34, fontSize:12, fontFamily:'Arial'},
-        {x:8.756, y:6.15, w:3.578, h:0.34, fontSize:12, fontFamily:'Arial'}
+        {x:1.000, y:6.15, w:3.578, h:0.34, fontSize:12, fontFamily:'Arial', color:null},
+        {x:4.878, y:6.15, w:3.578, h:0.34, fontSize:12, fontFamily:'Arial', color:null},
+        {x:8.756, y:6.15, w:3.578, h:0.34, fontSize:12, fontFamily:'Arial', color:null}
       ]
     }
   }
@@ -1433,20 +1437,49 @@ function decodeBlobToDataURL(blob, maxDim, quality){
     img.src = url;
   });
 }
+function withTimeout(promise, ms, timeoutMsg){
+  return new Promise((resolve, reject)=>{
+    let settled = false;
+    const timer = setTimeout(()=>{
+      if(settled) return;
+      settled = true;
+      reject(new Error(timeoutMsg || 'timeout'));
+    }, ms);
+    promise.then(v=>{
+      if(settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(v);
+    }, err=>{
+      if(settled) return;
+      settled = true;
+      clearTimeout(timer);
+      reject(err);
+    });
+  });
+}
 async function convertHeicToJpegBlob(file){
-  const converted = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.85 });
+  // heic2any decodes in a background Worker; on some setups (e.g. the file opened
+  // directly from disk, or restrictive browser policies) that worker can silently
+  // hang and never resolve or reject. A hard timeout guarantees we always move on
+  // instead of freezing the whole export on one bad photo.
+  const converted = await withTimeout(
+    heic2any({ blob: file, toType: 'image/jpeg', quality: 0.85 }),
+    20000,
+    'La conversión HEIC tardó demasiado (más de 20s) y fue cancelada'
+  );
   return Array.isArray(converted) ? converted[0] : converted;
 }
 async function loadAndCompressImage(file, maxDim=1400, quality=0.78){
   // First try a direct decode (fast path for normal JPG/PNG/WebP).
   try{
-    return await decodeBlobToDataURL(file, maxDim, quality);
+    return await withTimeout(decodeBlobToDataURL(file, maxDim, quality), 20000, 'decode-timeout');
   }catch(firstErr){
     // Fails for HEIC/HEIF (common from iPhone/WhatsApp exports, sometimes saved with
     // a .jpg extension even though the actual content is HEIC). Try converting it.
     try{
       const jpegBlob = await convertHeicToJpegBlob(file);
-      return await decodeBlobToDataURL(jpegBlob, maxDim, quality);
+      return await withTimeout(decodeBlobToDataURL(jpegBlob, maxDim, quality), 20000, 'decode-timeout');
     }catch(heicErr){
       throw new Error('No se pudo leer "'+file.name+'". El formato podría no ser compatible con el navegador (ej. HEIC/HEIF no convertible) o el archivo está dañado. Conviértela a JPG/PNG e inténtalo de nuevo.');
     }
@@ -2344,7 +2377,7 @@ async function drawSlide(slide, design, skippedOut){
   if(slide.type === 'cover'){
     await drawBgAsync(theme.bgCover);
     const cfg = LAYOUT.coverTitle;
-    ctx.fillStyle = '#' + theme.coverTitleColor;
+    ctx.fillStyle = '#' + (cfg.color || theme.coverTitleColor);
     ctx.textAlign = 'center';
     ctx.font = '700 ' + (cfg.fontSize*1.3) + 'px ' + cfg.fontFamily + ', sans-serif';
     const cx = (cfg.x + cfg.w/2) * IN;
@@ -2358,7 +2391,7 @@ async function drawSlide(slide, design, skippedOut){
   else if(slide.type === 'store'){
     await drawBgAsync(theme.bgStore);
     const cfg = LAYOUT.storeTitle;
-    ctx.fillStyle = '#' + theme.storeTitleColor;
+    ctx.fillStyle = '#' + (cfg.color || theme.storeTitleColor);
     ctx.textAlign = 'center';
     ctx.font = '700 ' + (cfg.fontSize*1.22) + 'px ' + cfg.fontFamily + ', sans-serif';
     ctx.fillText(slide.tienda, W/2, cfg.y*IN + cfg.fontSize*1.5);
@@ -2388,7 +2421,7 @@ async function drawSlide(slide, design, skippedOut){
     await drawBgAsync(theme.bgContent);
     const tcfg = LAYOUT.contentTitle;
     if(slide.title){
-      ctx.fillStyle = '#' + theme.contentTitleColor;
+      ctx.fillStyle = '#' + (tcfg.color || theme.contentTitleColor);
       ctx.textAlign = 'right';
       ctx.font = '700 ' + (tcfg.fontSize*1.18) + 'px ' + tcfg.fontFamily + ', sans-serif';
       ctx.fillText(slide.title.toUpperCase(), (tcfg.x+tcfg.w)*IN, tcfg.y*IN + tcfg.fontSize*1.4);
@@ -2426,7 +2459,7 @@ async function drawSlide(slide, design, skippedOut){
       ctx.drawImage(img, dx, dy, dw, dh);
       if(slide.showDate && p.label){
         const dcfg = dateSlots[i];
-        ctx.fillStyle = '#' + theme.dateColor;
+        ctx.fillStyle = '#' + (dcfg.color || theme.dateColor);
         ctx.font = '400 ' + (dcfg.fontSize*1.25) + 'px ' + dcfg.fontFamily + ', sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(p.label, (dcfg.x+dcfg.w/2)*IN, dcfg.y*IN + dcfg.fontSize*1.2);
@@ -2434,7 +2467,7 @@ async function drawSlide(slide, design, skippedOut){
     }
     if(slide.footer){
       const fcfg = LAYOUT.footer;
-      ctx.fillStyle = '#' + theme.footerColor;
+      ctx.fillStyle = '#' + (fcfg.color || theme.footerColor);
       ctx.font = 'italic 400 ' + (fcfg.fontSize*1.25) + 'px ' + fcfg.fontFamily + ', sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(slide.footer, (fcfg.x+fcfg.w/2)*IN, fcfg.y*IN + fcfg.fontSize*1.2);
@@ -2443,7 +2476,7 @@ async function drawSlide(slide, design, skippedOut){
   else if(slide.type === 'gracias'){
     await drawBgAsync(theme.bgGracias);
     const gcfg = LAYOUT.graciasTitle;
-    ctx.fillStyle = '#' + theme.graciasColor;
+    ctx.fillStyle = '#' + (gcfg.color || theme.graciasColor);
     ctx.font = '700 ' + (gcfg.fontSize*1.25) + 'px ' + gcfg.fontFamily + ', sans-serif';
     if(theme.graciasAlign === 'left'){
       ctx.textAlign = 'left';
@@ -2516,7 +2549,7 @@ async function buildPptxFile(slideModel, filename, onProgress){
       s.addImage({data: theme.bgCover, x:0, y:0, w:SLIDE_W, h:SLIDE_H});
       s.addText(slide.lines.map((l,i)=>({text:l, options:{breakLine: i<slide.lines.length-1}})), {
         x:cfg.x, y:cfg.y, w:cfg.w, h:cfg.h,
-        fontSize:cfg.fontSize, fontFace:cfg.fontFamily, bold:true, color:theme.coverTitleColor, align:'center', valign:'middle'
+        fontSize:cfg.fontSize, fontFace:cfg.fontFamily, bold:true, color:(cfg.color||theme.coverTitleColor), align:'center', valign:'middle'
       });
     }
     else if(slide.type === 'store'){
@@ -2524,7 +2557,7 @@ async function buildPptxFile(slideModel, filename, onProgress){
       s.addImage({data: theme.bgStore, x:0, y:0, w:SLIDE_W, h:SLIDE_H});
       s.addText(slide.tienda, {
         x:cfg.x, y:cfg.y, w:cfg.w, h:cfg.h,
-        fontSize:cfg.fontSize, fontFace:cfg.fontFamily, bold:true, color:theme.storeTitleColor, align:'center', valign:'middle'
+        fontSize:cfg.fontSize, fontFace:cfg.fontFamily, bold:true, color:(cfg.color||theme.storeTitleColor), align:'center', valign:'middle'
       });
       if(slide.elementos && slide.elementos.length){
         const tcfg = LAYOUT.storeTable;
@@ -2544,7 +2577,7 @@ async function buildPptxFile(slideModel, filename, onProgress){
       if(slide.title){
         s.addText(slide.title.toUpperCase(), {
           x:tcfg.x, y:tcfg.y, w:tcfg.w, h:tcfg.h,
-          fontSize:tcfg.fontSize, fontFace:tcfg.fontFamily, bold:true, color:theme.contentTitleColor, align:'right', valign:'middle'
+          fontSize:tcfg.fontSize, fontFace:tcfg.fontFamily, bold:true, color:(tcfg.color||theme.contentTitleColor), align:'right', valign:'middle'
         });
       }
       const n = slide.photos.length;
@@ -2575,7 +2608,7 @@ async function buildPptxFile(slideModel, filename, onProgress){
             const dcfg = dateSlots[i];
             s.addText(p.label, {
               x:dcfg.x, y:dcfg.y, w:dcfg.w, h:dcfg.h,
-              fontSize:dcfg.fontSize, fontFace:dcfg.fontFamily, color:theme.dateColor, align:'center'
+              fontSize:dcfg.fontSize, fontFace:dcfg.fontFamily, color:(dcfg.color||theme.dateColor), align:'center'
             });
           }
         }
@@ -2586,7 +2619,7 @@ async function buildPptxFile(slideModel, filename, onProgress){
         const fcfg = LAYOUT.footer;
         s.addText(slide.footer, {
           x:fcfg.x, y:fcfg.y, w:fcfg.w, h:fcfg.h,
-          fontSize:fcfg.fontSize, fontFace:fcfg.fontFamily, italic:true, color:theme.footerColor, align:'center'
+          fontSize:fcfg.fontSize, fontFace:fcfg.fontFamily, italic:true, color:(fcfg.color||theme.footerColor), align:'center'
         });
       }
     }
@@ -2595,10 +2628,10 @@ async function buildPptxFile(slideModel, filename, onProgress){
       s.addImage({data: theme.bgGracias, x:0, y:0, w:SLIDE_W, h:SLIDE_H});
       s.addText('GRACIAS', theme.graciasAlign==='left' ? {
         x:gcfg.x, y:gcfg.y, w:gcfg.w, h:gcfg.h,
-        fontSize:gcfg.fontSize, fontFace:gcfg.fontFamily, bold:true, color:theme.graciasColor, align:'left', valign:'top'
+        fontSize:gcfg.fontSize, fontFace:gcfg.fontFamily, bold:true, color:(gcfg.color||theme.graciasColor), align:'left', valign:'top'
       } : {
         x:0, y:0, w:SLIDE_W, h:SLIDE_H,
-        fontSize:gcfg.fontSize, fontFace:gcfg.fontFamily, bold:true, color:theme.graciasColor, align:'center', valign:'middle'
+        fontSize:gcfg.fontSize, fontFace:gcfg.fontFamily, bold:true, color:(gcfg.color||theme.graciasColor), align:'center', valign:'middle'
       });
     }
   }
@@ -3072,18 +3105,35 @@ function makeResizable(handleEl, boxEl, cfg, stageEl){
   handleEl.addEventListener('pointercancel', endResize);
 }
 
+function themeColorForId(id){
+  const theme = THEMES[state.design];
+  if(id==='coverTitle') return theme.coverTitleColor;
+  if(id==='storeTitle') return theme.storeTitleColor;
+  if(id==='contentTitle') return theme.contentTitleColor;
+  if(id==='footer') return theme.footerColor;
+  if(id==='graciasTitle') return theme.graciasColor;
+  if(id.indexOf('date')===0) return theme.dateColor;
+  return '000000';
+}
+
 function selectElement(id, cfg, label, isText){
   document.querySelectorAll('.editor-box').forEach(b=>b.classList.remove('selected'));
   const boxEl = document.getElementById('ebox_' + id);
   if(boxEl) boxEl.classList.add('selected');
   editorSelected = {id, cfg, isText};
   const panel = document.getElementById('editorFontPanel');
+  const colorWrap = document.getElementById('efpColorWrap');
   if(isText){
     panel.style.display = 'block';
     document.getElementById('efpLabel').textContent = label;
     const sel = document.getElementById('efpFontFamily');
     sel.innerHTML = FONT_CHOICES.map(f=>'<option value="'+f+'"'+(f===cfg.fontFamily?' selected':'')+'>'+f+'</option>').join('');
     document.getElementById('efpFontSize').value = cfg.fontSize;
+    const supportsColor = id !== 'storeTable';
+    colorWrap.style.display = supportsColor ? '' : 'none';
+    if(supportsColor){
+      document.getElementById('efpFontColor').value = '#' + (cfg.color || themeColorForId(id));
+    }
   } else {
     panel.style.display = 'none';
   }
@@ -3093,6 +3143,9 @@ function applyFontChange(){
   if(!editorSelected || !editorSelected.isText) return;
   const fam = document.getElementById('efpFontFamily').value;
   const raw = document.getElementById('efpFontSize').value;
+  if(editorSelected.id !== 'storeTable'){
+    editorSelected.cfg.color = document.getElementById('efpFontColor').value.replace('#','').toUpperCase();
+  }
   if(raw === '' || raw === '-'){ editorSelected.cfg.fontFamily = fam; redrawEditorCanvas(editorTemplate); return; }
   let size = parseInt(raw, 10);
   if(isNaN(size)) return;
