@@ -1076,6 +1076,11 @@ AGOSTO - 2026</textarea>
       <input type="checkbox" id="showDate" checked>
       <div><div class="lbl">Agregar subtítulo con la fecha</div><div class="sub">Se extrae del nombre de cada foto (ej. IMG-20260626-WA0016.jpg → 26/06)</div></div>
     </div>
+
+    <div class="checkbox-line" style="margin-top:16px;">
+      <input type="checkbox" id="addStoreDivider" checked>
+      <div><div class="lbl">Divisor de tienda/elemento</div><div class="sub">Agrega una diapositiva con el nombre de la tienda antes de sus fotos. Si no cargaste elementos, solo se muestra el nombre de la tienda centrado en la diapositiva.</div></div>
+    </div>
   </div>
 
   <!-- 4. Fotos -->
@@ -1142,21 +1147,21 @@ AGOSTO - 2026</textarea>
       <div class="efp-row">
         <div>
           <label class="field-label" style="margin-bottom:4px;">Tipo de letra</label>
-          <select id="efpFontFamily" onchange="applyFontChange()" oninput="applyFontChange()"></select>
+          <select id="efpFontFamily" onchange="applyFontChange(true)"></select>
         </div>
         <div style="max-width:110px;">
           <label class="field-label" style="margin-bottom:4px;">Tamaño (pt)</label>
-          <input type="text" inputmode="numeric" id="efpFontSize" onchange="applyFontChange()" oninput="applyFontChange()">
+          <input type="number" min="6" max="96" step="1" id="efpFontSize" onchange="applyFontChange(true)" oninput="applyFontChange(false)">
         </div>
         <div style="max-width:70px;" id="efpColorWrap">
           <label class="field-label" style="margin-bottom:4px;">Color</label>
-          <input type="color" id="efpFontColor" onchange="applyFontChange()" oninput="applyFontChange()" style="width:100%;height:38px;padding:2px;">
+          <input type="color" id="efpFontColor" onchange="applyFontChange(true)" oninput="applyFontChange(false)" style="width:100%;height:38px;padding:2px;">
         </div>
       </div>
     </div>
     <div class="editor-bottom-actions">
-      <button class="btn ghost" onclick="resetCurrentTemplate()"><svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h9a6 6 0 0 1 0 12h-2"/><path d="M7 5 3 10l4 5"/></svg> Restablecer esta plantilla</button>
-      <button class="btn primary" onclick="applyLayoutToAll()"><svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.3 2.3L16 10"/></svg> Listo (ya aplicado a todas las diapositivas)</button>
+      <button class="btn ghost" onclick="resetCurrentTemplate()"><svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h9a6 6 0 0 1 0 12h-2"/><path d="M7 5 3 10l4 5"/></svg> RESTABLECER</button>
+      <button class="btn primary" onclick="applyLayoutToAll()"><svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.3 2.3L16 10"/></svg> APLICAR</button>
     </div>
   </div>
 </div>
@@ -2291,6 +2296,7 @@ function buildSlideModel(){
   const slides = [];
   const titleMode = document.querySelector('input[name=titleMode]:checked').value;
   const showDate = document.getElementById('showDate').checked;
+  const addStoreDivider = document.getElementById('addStoreDivider').checked;
   const perSlide = getPhotosPerSlide();
   const pptTitleLines = document.getElementById('pptTitle').value.split('\n').filter(l=>l.trim().length);
 
@@ -2316,7 +2322,7 @@ function buildSlideModel(){
     state.tiendas.forEach(t=>{
       const photos = state.buckets[bucketKey(t,null)] || [];
       if(photos.length===0) return;
-      slides.push({type:'store', tienda:t, elementos:null});
+      if(addStoreDivider) slides.push({type:'store', tienda:t, elementos:null});
       pushContentSlides(photos, titleMode==='tiendas' ? t : '', t);
     });
   } else if(state.mode === 'elementos'){
@@ -2329,7 +2335,7 @@ function buildSlideModel(){
     state.tiendas.forEach(t=>{
       const elementosConFotos = state.elementos.filter(e => bucketCount(t,e)>0);
       if(elementosConFotos.length===0) return;
-      slides.push({type:'store', tienda:t, elementos: elementosConFotos});
+      if(addStoreDivider) slides.push({type:'store', tienda:t, elementos: elementosConFotos});
       elementosConFotos.forEach(e=>{
         const photos = state.buckets[bucketKey(t,e)] || [];
         const headerTxt = titleMode==='elementos' ? e : (titleMode==='tiendas' ? t : '');
@@ -2391,11 +2397,13 @@ async function drawSlide(slide, design, skippedOut){
   else if(slide.type === 'store'){
     await drawBgAsync(theme.bgStore);
     const cfg = LAYOUT.storeTitle;
+    const hasElementos = !!(slide.elementos && slide.elementos.length);
     ctx.fillStyle = '#' + (cfg.color || theme.storeTitleColor);
     ctx.textAlign = 'center';
     ctx.font = '700 ' + (cfg.fontSize*1.22) + 'px ' + cfg.fontFamily + ', sans-serif';
-    ctx.fillText(slide.tienda, W/2, cfg.y*IN + cfg.fontSize*1.5);
-    if(slide.elementos && slide.elementos.length){
+    const titleY = hasElementos ? (cfg.y*IN + cfg.fontSize*1.5) : (H/2 + cfg.fontSize*0.45);
+    ctx.fillText(slide.tienda, W/2, titleY);
+    if(hasElementos){
       const tcfg = LAYOUT.storeTable;
       const tx = tcfg.x*IN, tw = tcfg.w*IN, ty0 = tcfg.y*IN;
       const rowH = 0.42*IN;
@@ -2554,12 +2562,13 @@ async function buildPptxFile(slideModel, filename, onProgress){
     }
     else if(slide.type === 'store'){
       const cfg = LAYOUT.storeTitle;
+      const hasElementos = !!(slide.elementos && slide.elementos.length);
       s.addImage({data: theme.bgStore, x:0, y:0, w:SLIDE_W, h:SLIDE_H});
-      s.addText(slide.tienda, {
-        x:cfg.x, y:cfg.y, w:cfg.w, h:cfg.h,
-        fontSize:cfg.fontSize, fontFace:cfg.fontFamily, bold:true, color:(cfg.color||theme.storeTitleColor), align:'center', valign:'middle'
-      });
-      if(slide.elementos && slide.elementos.length){
+      if(hasElementos){
+        s.addText(slide.tienda, {
+          x:cfg.x, y:cfg.y, w:cfg.w, h:cfg.h,
+          fontSize:cfg.fontSize, fontFace:cfg.fontFamily, bold:true, color:(cfg.color||theme.storeTitleColor), align:'center', valign:'middle'
+        });
         const tcfg = LAYOUT.storeTable;
         const rows = [[{text:'ELEMENTOS', options:{fill:{color:theme.tableHeaderFill}, color:theme.tableHeaderColor, bold:true, align:'center'}}]];
         slide.elementos.forEach(e=>{
@@ -2568,6 +2577,12 @@ async function buildPptxFile(slideModel, filename, onProgress){
         s.addTable(rows, {
           x:tcfg.x, y:tcfg.y, w:tcfg.w,
           fontSize:tcfg.fontSize, fontFace:tcfg.fontFamily, border:{type:'solid', color:'DDDDDD', pt:0.5}, autoPage:false, rowH:0.4
+        });
+      } else {
+        // No elementos: center the store name in the middle of the slide (both axes).
+        s.addText(slide.tienda, {
+          x:0, y:0, w:SLIDE_W, h:SLIDE_H,
+          fontSize:cfg.fontSize, fontFace:cfg.fontFamily, bold:true, color:(cfg.color||theme.storeTitleColor), align:'center', valign:'middle'
         });
       }
     }
@@ -3139,21 +3154,23 @@ function selectElement(id, cfg, label, isText){
   }
 }
 
-function applyFontChange(){
+function applyFontChange(commit){
   if(!editorSelected || !editorSelected.isText) return;
   const fam = document.getElementById('efpFontFamily').value;
   const raw = document.getElementById('efpFontSize').value;
   if(editorSelected.id !== 'storeTable'){
     editorSelected.cfg.color = document.getElementById('efpFontColor').value.replace('#','').toUpperCase();
   }
-  if(raw === '' || raw === '-'){ editorSelected.cfg.fontFamily = fam; redrawEditorCanvas(editorTemplate); return; }
-  let size = parseInt(raw, 10);
-  if(isNaN(size)) return;
-  if(size<6) size = 6;
-  if(size>96) size = 96;
   editorSelected.cfg.fontFamily = fam;
+  if(raw === '' || raw === '-'){ redrawEditorCanvas(editorTemplate); return; }
+  let size = parseInt(raw, 10);
+  if(isNaN(size)){ redrawEditorCanvas(editorTemplate); return; }
+  if(commit){
+    if(size<6) size = 6;
+    if(size>96) size = 96;
+    if(String(size) !== raw) document.getElementById('efpFontSize').value = size;
+  }
   editorSelected.cfg.fontSize = size;
-  if(String(size) !== raw) document.getElementById('efpFontSize').value = size;
   redrawEditorCanvas(editorTemplate);
 }
 
