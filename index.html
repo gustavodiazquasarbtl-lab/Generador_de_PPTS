@@ -1015,12 +1015,6 @@ AGOSTO - 2026</textarea>
   <div class="card">
     <h2><span class="num">2</span> Organización de las diapositivas</h2>
     <p class="hint">Marca cómo quieres agrupar las fotos. Puedes pegar varias líneas a la vez: cada línea se agrega como un elemento o tienda distinto.</p>
-    <div class="section-toolbar" style="justify-content:flex-start;">
-      <button class="util-btn" onclick="exportConfig()"><svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> Guardar configuración</button>
-      <button class="util-btn" onclick="triggerConfigUpload()"><svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2H3z"/><path d="M3 9l1.5 9a2 2 0 0 0 2 1.7H17.5a2 2 0 0 0 2-1.7L21 9"/></svg> Cargar configuración</button>
-      <input type="file" id="configFileInput" accept=".json" style="display:none" onchange="handleConfigFile(this)">
-    </div>
-
     <div class="checkbox-line">
       <input type="checkbox" id="useTiendas" onchange="onOrgChange()">
       <div><div class="lbl">Organizar por Tiendas</div><div class="sub">Se agrega una diapositiva divisoria por tienda</div></div>
@@ -1029,7 +1023,6 @@ AGOSTO - 2026</textarea>
       <label class="field-label">Tiendas a incluir</label>
       <div class="chip-input-row">
         <textarea id="tiendaInput" placeholder="Una tienda por línea. Ej:&#10;Salaverry&#10;Higuereta&#10;Jockey Plaza" spellcheck="false"></textarea>
-        <button class="paste-btn" onclick="pasteIntoTextarea('tiendaInput')" title="Pegar desde el portapapeles"><svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/></svg> Pegar</button>
         <button class="add-btn" onclick="addTiendasFromTextarea()">Agregar</button>
       </div>
       <div class="list-tools-row">
@@ -1048,7 +1041,6 @@ AGOSTO - 2026</textarea>
       <label class="field-label">Elementos a incluir</label>
       <div class="chip-input-row">
         <textarea id="elementoInput" placeholder="Un elemento por línea. Ej:&#10;CENEFA GILLETTE&#10;CENEFA OLD SPICE&#10;CENEFA SECRET" spellcheck="false"></textarea>
-        <button class="paste-btn" onclick="pasteIntoTextarea('elementoInput')" title="Pegar desde el portapapeles"><svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/></svg> Pegar</button>
         <button class="add-btn" onclick="addElementosFromTextarea()">Agregar</button>
       </div>
       <div class="list-tools-row">
@@ -1385,6 +1377,15 @@ function log(msg){
   box.appendChild(d);
   box.scrollTop = box.scrollHeight;
 }
+// Surface errors that would otherwise fail silently mid-generation (e.g. an
+// exception thrown outside the try/catch in generateOutput, or a rejected
+// promise nobody awaited) so a stalled export always leaves a trace in the log.
+window.addEventListener('error', function(e){
+  try{ log('\u26A0 Error inesperado: ' + (e.message || e)); }catch(_){}
+});
+window.addEventListener('unhandledrejection', function(e){
+  try{ log('\u26A0 Error inesperado (promesa): ' + errMsg(e.reason)); }catch(_){}
+});
 function setProgress(pct, label){
   const wrap = document.getElementById('progressWrap');
   wrap.style.display = 'block';
@@ -2629,6 +2630,10 @@ async function buildPptxFile(slideModel, filename, onProgress){
         }
         done++;
         if(onProgress) onProgress(done, totalPhotos);
+        // Give the browser a chance to breathe every few photos. Without this,
+        // a long uninterrupted run on a big batch can make the tab appear
+        // frozen (and some browsers will kill an unresponsive tab outright).
+        if(done % 6 === 0) await new Promise(r=>setTimeout(r, 0));
       }
       if(slide.footer){
         const fcfg = LAYOUT.footer;
@@ -2828,15 +2833,13 @@ async function extractContentSlidesFromPptx(file, onProgress){
       }catch(e){ /* skip unreadable image */ }
     }
     if(images.length){
-      const texts = [...xml.matchAll(/<a:t>([^<]*)<\/a:t>/g)].map(m=>decodeXmlEntities(m[1])).map(s=>s.trim()).filter(Boolean);
-      const title = texts.length ? texts[0] : '';
       const perSlide = getPhotosPerSlide();
       for(let i=0;i<images.length;i+=perSlide){
         const group = [];
         for(let j=0;j<perSlide;j++) group.push(images[i+j] ? {dataURL:images[i+j]} : null);
         results.push({
           type:'content',
-          title: i===0 ? title : '',
+          title: '', // slides con fotos nunca llevan título al reformatear
           footer:'',
           showDate:false,
           photos: group
