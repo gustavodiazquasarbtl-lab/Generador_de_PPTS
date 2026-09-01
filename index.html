@@ -2811,9 +2811,11 @@ async function extractContentSlidesFromPptx(file, onProgress){
     for(const block of picBlocks){
       const embedM = block.match(/r:embed="([^"]+)"/);
       if(!embedM) continue;
-      const extM = block.match(/<a:ext cx="(\d+)" cy="(\d+)"\s*\/>/);
-      if(extM){
-        const ratio = (parseInt(extM[1],10) * parseInt(extM[2],10)) / SLIDE_AREA_EMU;
+      const xfrmM = block.match(/<a:off x="(-?\d+)" y="(-?\d+)"\s*\/>\s*<a:ext cx="(\d+)" cy="(\d+)"\s*\/>/);
+      let px=null, py=null, pcx=null, pcy=null;
+      if(xfrmM){
+        px=+xfrmM[1]; py=+xfrmM[2]; pcx=+xfrmM[3]; pcy=+xfrmM[4];
+        const ratio = (pcx * pcy) / SLIDE_AREA_EMU;
         if(ratio > 0.85) continue; // likely a full-slide background/template image, skip
       }
       const target = mediaMap[embedM[1]];
@@ -2829,19 +2831,59 @@ async function extractContentSlidesFromPptx(file, onProgress){
       if(dims.w < 250 || dims.h < 250) continue; // likely a small logo/icon, skip
       try{
         const compressed = await compressDataURL(rawDataURL, 1400, 0.8);
-        images.push(compressed);
+        images.push({dataURL:compressed, x:px, y:py, cx:pcx, cy:pcy});
       }catch(e){ /* skip unreadable image */ }
     }
+
+    // Text boxes on the slide (store/photo captions, or a slide title) — matched
+    // to the nearest photo by horizontal position so they land back in the
+    // correct spot instead of being discarded.
+    const spBlocks = [...xml.matchAll(/<p:sp>[\s\S]*?<\/p:sp>/g)].map(m=>m[0]);
+    const textBoxes = [];
+    for(const block of spBlocks){
+      const tParts = [...block.matchAll(/<a:t>([^<]*)<\/a:t>/g)].map(m=>decodeXmlEntities(m[1]).trim()).filter(Boolean);
+      if(!tParts.length) continue;
+      const text = tParts.join(' ').trim();
+      if(!text) continue;
+      const xfrmM = block.match(/<a:off x="(-?\d+)" y="(-?\d+)"\s*\/>\s*<a:ext cx="(\d+)" cy="(\d+)"\s*\/>/);
+      textBoxes.push(xfrmM ? {text, x:+xfrmM[1], y:+xfrmM[2], cx:+xfrmM[3], cy:+xfrmM[4]} : {text, x:null, y:null, cx:null, cy:null});
+    }
+    const labels = new Array(images.length).fill('');
+    const usedText = new Set();
+    textBoxes.forEach(t=>{
+      if(t.x===null) return;
+      const tcx = t.x + t.cx/2;
+      let bestIdx = -1, bestDist = Infinity;
+      images.forEach((img,idx)=>{
+        if(img.x===null || labels[idx] || t.y < img.y) return; // title above photo, or slot taken
+        const dist = Math.abs(tcx - (img.x + img.cx/2));
+        if(dist < bestDist){ bestDist = dist; bestIdx = idx; }
+      });
+      if(bestIdx !== -1 && bestDist <= Math.max(images[bestIdx].cx * 0.6, 300000)){
+        labels[bestIdx] = t.text;
+        usedText.add(t);
+      }
+    });
+    const orphanTitle = textBoxes.find(t=>!usedText.has(t));
+    const slideTitle = orphanTitle ? orphanTitle.text : '';
+
     if(images.length){
       const perSlide = getPhotosPerSlide();
       for(let i=0;i<images.length;i+=perSlide){
         const group = [];
-        for(let j=0;j<perSlide;j++) group.push(images[i+j] ? {dataURL:images[i+j]} : null);
+        let groupHasLabel = false;
+        for(let j=0;j<perSlide;j++){
+          const img = images[i+j];
+          if(!img){ group.push(null); continue; }
+          const label = labels[i+j] || '';
+          if(label) groupHasLabel = true;
+          group.push({dataURL:img.dataURL, label});
+        }
         results.push({
           type:'content',
-          title: '', // slides con fotos nunca llevan título al reformatear
+          title: i===0 ? slideTitle : '', // el título real (si existía) se conserva solo en la primera sub-diapositiva
           footer:'',
-          showDate:false,
+          showDate: groupHasLabel, // reutiliza el slot de etiqueta bajo cada foto para las leyendas originales
           photos: group
         });
       }
