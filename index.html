@@ -2887,6 +2887,12 @@ async function extractContentSlidesFromPptx(file, onProgress){
           photos: group
         });
       }
+    } else if(textBoxes.length){
+      // Diapositiva sin fotos (portada/divisor con solo texto, ej. "CABECERA CLASICA"):
+      // se conserva como diapositiva divisoria de tienda, con el texto original
+      // pero con la tipografía/diseño del destino en vez de descartarla.
+      const text = textBoxes.map(t=>t.text).filter(Boolean).join(' ');
+      if(text) results.push({type:'store', tienda:text, elementos:null});
     }
     if(onProgress) onProgress(si+1, slidePaths.length);
   }
@@ -2908,9 +2914,9 @@ async function handleReskinFile(file){
       summary.textContent = 'Leyendo "'+file.name+'"... (' + done + '/' + total + ' diapositivas)';
     });
     const nImgs = countReskinImages(reskinSlideModel);
-    if(nImgs === 0){
-      summary.textContent = 'No se encontraron fotos de contenido en "'+file.name+'". Revisa que el archivo tenga imágenes que no sean solo el fondo/plantilla.';
-      log('Reformatear PPT: no se encontraron fotos utilizables en "'+file.name+'".');
+    if(reskinSlideModel.length === 0){
+      summary.textContent = 'No se encontró contenido utilizable en "'+file.name+'". Revisa que el archivo tenga fotos o texto que no sea solo el fondo/plantilla.';
+      log('Reformatear PPT: no se encontró contenido utilizable en "'+file.name+'".');
       return;
     }
     summary.textContent = '"'+file.name+'": ' + reskinSlideModel.length + ' diapositivas de contenido · ' + nImgs + ' fotos detectadas.';
@@ -2924,7 +2930,7 @@ async function handleReskinFile(file){
 }
 
 async function generateReskin(kind){
-  if(!reskinSlideModel || reskinSlideModel.length===0){ alert('Primero sube un PPT válido con fotos.'); return; }
+  if(!reskinSlideModel || reskinSlideModel.length===0){ alert('Primero sube un PPT válido con contenido.'); return; }
   const btn = document.getElementById('btnReskinGenerate');
   btn.disabled = true;
   try{
