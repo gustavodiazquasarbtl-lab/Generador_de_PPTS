@@ -2748,9 +2748,15 @@ async function generateOutput(kind){
     const kinds = kind==='both' ? ['pptx','pdf'] : [kind];
     const slideModel = buildSlideModel();
     const totalPhotoCountForFile = totalPhotoCount();
-    const split = document.getElementById('splitEvery45').checked;
+    let split = document.getElementById('splitEvery45').checked;
     if(totalPhotoCountForFile > 200 && !split){
-      log('Aviso: con '+totalPhotoCountForFile+' fotos y sin dividir en partes, el archivo puede tardar más y usar bastante memoria del navegador. Si falla, activa "Dividir en archivos de 45 diapositivas".');
+      // Generar 200+ fotos en una sola tanda continua acumula mucha memoria en
+      // el navegador y eso hace que, a mitad de camino, fotos perfectamente
+      // válidas empiecen a fallar por falta de recursos (no por estar dañadas).
+      // Dividir en partes libera esa memoria entre cada una.
+      document.getElementById('splitEvery45').checked = true;
+      split = true;
+      log('Aviso: con '+totalPhotoCountForFile+' fotos se activó automáticamente "Dividir en archivos de 45 diapositivas" para evitar fallos por memoria a mitad de la generación.');
     }
     const baseTitle = (document.getElementById('pptTitle').value.split('\n')[0] || 'Presentacion').trim().replace(/[^a-zA-Z0-9 _-]/g,'').replace(/\s+/g,'_').slice(0,40) || 'Presentacion';
     const groups = split ? chunkSlides(slideModel, 45) : [slideModel];
