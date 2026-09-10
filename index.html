@@ -954,6 +954,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   </div>
 
   <!-- 1. Título y diseño -->
+  <div id="sharedFields" style="display:none;">
   <div class="card">
     <h2><span class="num">1</span> Título y diseño</h2>
     <p class="hint">Define el título de la portada y el estilo visual de la presentación.</p>
@@ -983,6 +984,7 @@ AGOSTO - 2026</textarea>
       <label class="radio-opt"><input type="radio" name="photosPerSlide" value="3"> 3 fotos por diapositiva</label>
     </div>
   </div>
+  </div><!-- /sharedFields -->
 
   <div id="flowExistente" style="display:none;">
   <!-- Reformatear PPT existente -->
@@ -1199,6 +1201,7 @@ function selectAppMode(mode){
   document.querySelectorAll('.mode-card').forEach(el=>{
     el.classList.toggle('selected', el.dataset.mode === mode);
   });
+  document.getElementById('sharedFields').style.display = '';
   document.getElementById('flowNueva').style.display = mode === 'nueva' ? '' : 'none';
   document.getElementById('flowExistente').style.display = mode === 'existente' ? '' : 'none';
 }
@@ -1900,7 +1903,7 @@ function buildFlatUploadZone(){
   wrap.className = 'upload-zone';
   wrap.innerHTML = '<div class="icon">'+icon('image')+'</div><div class="title">Subir fotos</div><div class="desc">Click o arrastra hasta ~500 imágenes ('+state.photos.length+' cargadas)</div>';
   const input = document.createElement('input');
-  input.type = 'file'; input.accept = 'image/*'; input.multiple = true;
+  input.type = 'file'; input.accept = 'image/*,.heic,.heif,.tif,.tiff,.avif'; input.multiple = true;
   wrap.appendChild(input);
   wrap.onclick = ()=>input.click();
   setupDrop(wrap, input);
@@ -1943,7 +1946,7 @@ function buildBucketUploadZone(tienda, elemento){
   wrap.className = 'upload-zone';
   wrap.innerHTML = '<div class="icon">'+icon('image')+'</div><div class="title">Subir fotos de '+escapeHtml(label)+'</div><div class="desc">Click o arrastra imágenes — se suman a las ya cargadas</div>';
   const input = document.createElement('input');
-  input.type = 'file'; input.accept = 'image/*'; input.multiple = true;
+  input.type = 'file'; input.accept = 'image/*,.heic,.heif,.tif,.tiff,.avif'; input.multiple = true;
   wrap.appendChild(input);
   wrap.onclick = (e)=>{ e.stopPropagation(); input.click(); };
   setupDrop(wrap, input);
@@ -2038,6 +2041,18 @@ function buildGeneralFolderZone(mode){
   return box;
 }
 
+// Algunos navegadores no asignan un MIME type "image/..." a ciertos formatos
+// (sobre todo HEIC/HEIF de iPhone, y a veces TIFF/AVIF), lo que hacía que se
+// descartaran en silencio antes de intentar siquiera leerlos. Aceptamos por
+// MIME type si está disponible, y si no, por extensión conocida.
+const IMAGE_EXTENSIONS = ['jpg','jpeg','png','gif','bmp','webp','heic','heif','tif','tiff','avif','svg'];
+function isImageFile(f){
+  if(f && f.type && f.type.startsWith('image/')) return true;
+  const name = (f && f.name || '').toLowerCase();
+  const ext = name.includes('.') ? name.split('.').pop() : '';
+  return IMAGE_EXTENSIONS.includes(ext);
+}
+
 function setupDrop(zone, input){
   ['dragenter','dragover'].forEach(ev=>zone.addEventListener(ev, e=>{
     e.preventDefault(); e.stopPropagation(); zone.classList.add('dragover');
@@ -2046,7 +2061,7 @@ function setupDrop(zone, input){
     e.preventDefault(); e.stopPropagation(); zone.classList.remove('dragover');
   }));
   zone.addEventListener('drop', e=>{
-    const files = Array.from(e.dataTransfer.files || []).filter(f=>f.type.startsWith('image/'));
+    const files = Array.from(e.dataTransfer.files || []).filter(isImageFile);
     if(files.length){
       const dt = new DataTransfer();
       files.forEach(f=>dt.items.add(f));
@@ -2107,7 +2122,7 @@ async function processFilesToBucket(files, tienda, elemento){
 }
 
 async function processFolderForTienda(files, tienda){
-  const imgFiles = files.filter(f=> f.type && f.type.startsWith('image/'));
+  const imgFiles = files.filter(isImageFile);
   if(!imgFiles.length) return;
   setProgress(0, 'Clasificando carpeta de '+tienda+'...');
   let processed = 0, matched = 0, dupes = 0;
@@ -2149,7 +2164,7 @@ function findElementoInSegments(segs){
 }
 
 async function processGeneralFolder(files, mode){
-  const imgFiles = files.filter(f=> f.type && f.type.startsWith('image/'));
+  const imgFiles = files.filter(isImageFile);
   if(!imgFiles.length) return;
   setProgress(0, 'Clasificando carpeta general...');
   let processed = 0, matched = 0, dupes = 0;
