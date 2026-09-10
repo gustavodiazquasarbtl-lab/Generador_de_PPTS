@@ -1479,19 +1479,46 @@ async function convertHeicToJpegBlob(file){
   );
   return Array.isArray(converted) ? converted[0] : converted;
 }
+// Antes de intentar la conversión HEIC (costosa, hasta 20s) comprobamos si el
+// archivo realmente podría serlo, leyendo la firma "ftyp" de sus primeros bytes.
+// Esto evita perder ~20s extra en fotos JPG/PNG normales que simplemente
+// fallaron por sobrecarga del navegador durante una tanda muy larga.
+async function looksLikeHeic(file){
+  const name = (file.name || '').toLowerCase();
+  if(name.endsWith('.heic') || name.endsWith('.heif')) return true;
+  try{
+    const buf = await file.slice(0, 12).arrayBuffer();
+    const bytes = new Uint8Array(buf);
+    const tag = String.fromCharCode(bytes[8], bytes[9], bytes[10], bytes[11]);
+    return ['heic','heix','hevc','hevx','mif1','msf1'].includes(tag);
+  }catch(e){ return false; }
+}
 async function loadAndCompressImage(file, maxDim=1400, quality=0.78){
   // First try a direct decode (fast path for normal JPG/PNG/WebP).
   try{
     return await withTimeout(decodeBlobToDataURL(file, maxDim, quality), 20000, 'decode-timeout');
   }catch(firstErr){
-    // Fails for HEIC/HEIF (common from iPhone/WhatsApp exports, sometimes saved with
-    // a .jpg extension even though the actual content is HEIC). Try converting it.
-    try{
-      const jpegBlob = await convertHeicToJpegBlob(file);
-      return await withTimeout(decodeBlobToDataURL(jpegBlob, maxDim, quality), 20000, 'decode-timeout');
-    }catch(heicErr){
-      throw new Error('No se pudo leer "'+file.name+'". El formato podría no ser compatible con el navegador (ej. HEIC/HEIF no convertible) o el archivo está dañado. Conviértela a JPG/PNG e inténtalo de nuevo.');
+    // A timeout (as opposed to a real decode error) usually means the browser
+    // was too busy at that exact moment, not that the file itself is bad —
+    // one retry often succeeds once earlier photos have finished processing.
+    if(firstErr.message === 'decode-timeout'){
+      try{
+        return await withTimeout(decodeBlobToDataURL(file, maxDim, quality), 20000, 'decode-timeout');
+      }catch(retryErr){ /* falls through below */ }
     }
+    // Only worth trying the (slow) HEIC conversion if the file plausibly is HEIC.
+    if(await looksLikeHeic(file)){
+      try{
+        const jpegBlob = await convertHeicToJpegBlob(file);
+        return await withTimeout(decodeBlobToDataURL(jpegBlob, maxDim, quality), 20000, 'decode-timeout');
+      }catch(heicErr){
+        throw new Error('No se pudo convertir "'+file.name+'" desde HEIC/HEIF. El archivo podría estar dañado.');
+      }
+    }
+    if(firstErr.message === 'decode-timeout'){
+      throw new Error('"'+file.name+'" tardó demasiado en procesarse (posible sobrecarga del navegador con una tanda muy grande). Intenta generar en lotes más pequeños o vuelve a intentarlo.');
+    }
+    throw new Error('No se pudo leer "'+file.name+'". El archivo podría estar dañado o en un formato no compatible. Conviértela a JPG/PNG e inténtalo de nuevo.');
   }
 }
 function compressDataURL(dataURL, maxDim=1400, quality=0.8){
