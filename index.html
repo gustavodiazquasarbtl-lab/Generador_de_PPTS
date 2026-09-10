@@ -1446,6 +1446,26 @@ function decodeBlobToDataURL(blob, maxDim, quality){
     img.src = url;
   });
 }
+// Ruta de decodificación alternativa usando createImageBitmap. Algunos JPG con
+// marcadores poco comunes (ciertos celulares Android, apps de marca de agua)
+// hacen que el decodificador de <img> falle aunque el archivo sea válido —
+// createImageBitmap usa un decodificador distinto y a veces más tolerante.
+async function decodeBlobToDataURLViaBitmap(blob, maxDim, quality){
+  const bitmap = await createImageBitmap(blob);
+  try{
+    let w = bitmap.width, h = bitmap.height;
+    const scale = Math.min(1, maxDim / Math.max(w,h));
+    w = Math.round(w*scale); h = Math.round(h*scale);
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    const dataURL = canvas.toDataURL('image/jpeg', quality);
+    return {dataURL, w, h};
+  } finally {
+    bitmap.close();
+  }
+}
 function withTimeout(promise, ms, timeoutMsg){
   return new Promise((resolve, reject)=>{
     let settled = false;
@@ -1505,6 +1525,14 @@ async function loadAndCompressImage(file, maxDim=1400, quality=0.78){
       try{
         return await withTimeout(decodeBlobToDataURL(file, maxDim, quality), 20000, 'decode-timeout');
       }catch(retryErr){ /* falls through below */ }
+    }
+    // Antes de rendirnos, probamos con createImageBitmap: usa un decodificador
+    // distinto al de <img> y a veces acepta archivos que el otro rechaza
+    // (marcadores JPEG poco comunes de ciertos celulares/apps).
+    if(typeof createImageBitmap === 'function'){
+      try{
+        return await withTimeout(decodeBlobToDataURLViaBitmap(file, maxDim, quality), 20000, 'decode-timeout');
+      }catch(bitmapErr){ /* falls through below */ }
     }
     // Only worth trying the (slow) HEIC conversion if the file plausibly is HEIC.
     if(await looksLikeHeic(file)){
@@ -2194,7 +2222,7 @@ async function processGeneralFolder(files, mode){
   const imgFiles = files.filter(isImageFile);
   if(!imgFiles.length) return;
   setProgress(0, 'Clasificando carpeta general...');
-  let processed = 0, matched = 0, dupes = 0;
+  let processed = 0, matched = 0, dupes = 0, ignoredTienda = 0;
   for(const file of imgFiles){
     const relPath = file.webkitRelativePath || '';
     const parts = relPath.split('/');
@@ -2206,12 +2234,16 @@ async function processGeneralFolder(files, mode){
     if(mode === 'both'){
       const mT = findTiendaInSegments(segs);
       const mE = findElementoInSegments(segs);
-      if(mT && mE){ targetTienda=mT; targetElemento=mE; isMatch=true; }
+      if(!mT){
+        // La carpeta de tienda no está en tu lista de tiendas configurada:
+        // se ignora por completo en vez de pedir clasificación manual.
+        ignoredTienda++;
+      } else if(mE){ targetTienda=mT; targetElemento=mE; isMatch=true; }
       else { state.unclassified.push({rec, tienda:mT, elemento:mE, needTienda:!mT, needElemento:!mE}); }
     } else if(mode === 'tiendas'){
       const mT = findTiendaInSegments(segs);
       if(mT){ targetTienda=mT; isMatch=true; }
-      else { state.unclassified.push({rec, tienda:null, elemento:null, needTienda:true, needElemento:false}); }
+      else { ignoredTienda++; }
     } else if(mode === 'elementos'){
       const mE = findElementoInSegments(segs);
       if(mE){ targetElemento=mE; isMatch=true; }
@@ -2226,8 +2258,10 @@ async function processGeneralFolder(files, mode){
     setProgress(Math.round(processed/imgFiles.length*100), 'Clasificando... ('+processed+'/'+imgFiles.length+')');
   }
   hideProgress();
+  const sinClasificar = imgFiles.length - matched - dupes - ignoredTienda;
   log('Carpeta general: ' + matched + ' fotos clasificadas' +
-    (imgFiles.length-matched-dupes>0 ? (', ' + (imgFiles.length-matched-dupes) + ' sin clasificar') : '') +
+    (sinClasificar>0 ? (', ' + sinClasificar + ' sin clasificar') : '') +
+    (ignoredTienda>0 ? (', ' + ignoredTienda + ' ignorada(s) por ser de una tienda no incluida en tu lista') : '') +
     (dupes>0 ? (', ' + dupes + ' duplicada(s) omitida(s)') : '') + '.');
   rebuildUploadArea();
 }
