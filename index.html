@@ -1518,14 +1518,14 @@ async function loadAndCompressImage(file, maxDim=1400, quality=0.78){
   try{
     return await withTimeout(decodeBlobToDataURL(file, maxDim, quality), 20000, 'decode-timeout');
   }catch(firstErr){
-    // A timeout (as opposed to a real decode error) usually means the browser
-    // was too busy at that exact moment, not that the file itself is bad —
-    // one retry often succeeds once earlier photos have finished processing.
-    if(firstErr.message === 'decode-timeout'){
-      try{
-        return await withTimeout(decodeBlobToDataURL(file, maxDim, quality), 20000, 'decode-timeout');
-      }catch(retryErr){ /* falls through below */ }
-    }
+    // Le damos al navegador un respiro real (no solo relanzar de inmediato)
+    // antes de reintentar — si el fallo fue por saturación momentánea del
+    // navegador (lo más probable, dado que el archivo en sí es válido), una
+    // pausa real ayuda mucho más que reintentar en el mismo instante.
+    await new Promise(r=>setTimeout(r, 800));
+    try{
+      return await withTimeout(decodeBlobToDataURL(file, maxDim, quality), 20000, 'decode-timeout');
+    }catch(retryErr){ /* falls through below */ }
     // Antes de rendirnos, probamos con createImageBitmap: usa un decodificador
     // distinto al de <img> y a veces acepta archivos que el otro rechaza
     // (marcadores JPEG poco comunes de ciertos celulares/apps).
@@ -2818,6 +2818,14 @@ async function generateOutput(kind){
         await new Promise(r=>setTimeout(r, 300));
       }
       releaseSlideModelImages(groups[i]); // free memory before next chunk
+      if(i < groups.length-1){
+        // Pausa real entre partes (no solo entre PPTX/PDF de la misma parte):
+        // le da tiempo al navegador de liberar memoria de verdad antes de
+        // arrancar la siguiente tanda de fotos, en vez de encadenar todo sin
+        // descanso y llegar saturado a las partes finales.
+        log('Pausa breve antes de la siguiente parte...');
+        await new Promise(r=>setTimeout(r, 2000));
+      }
     }
     setProgress(100, 'Listo.');
     if(skippedAll.length){
