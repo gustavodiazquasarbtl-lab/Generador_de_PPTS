@@ -1417,12 +1417,13 @@ function cssId(s){ return (s||'').toString().replace(/[^a-zA-Z0-9]/g,'_'); }
 
 /* Compress + read an image File to a dataURL (JPEG), capped at maxDim */
 function decodeBlobToDataURL(blob, maxDim, quality){
-  return new Promise((resolve, reject)=>{
-    let url;
+  let img, url, cancelled = false;
+  const promise = new Promise((resolve, reject)=>{
     try{ url = URL.createObjectURL(blob); }
     catch(e){ reject(e); return; }
-    const img = new Image();
+    img = new Image();
     img.onload = ()=>{
+      if(cancelled) return;
       try{
         let w = img.width, h = img.height;
         const scale = Math.min(1, maxDim / Math.max(w,h));
@@ -1440,11 +1441,22 @@ function decodeBlobToDataURL(blob, maxDim, quality){
       }
     };
     img.onerror = ()=>{
+      if(cancelled) return;
       URL.revokeObjectURL(url);
       reject(new Error('decode-failed'));
     };
     img.src = url;
   });
+  // Si withTimeout nos abandona (se agotó el tiempo), cortamos la decodificación
+  // en curso en vez de dejarla corriendo de fondo — si no, un reintento se suma
+  // a la anterior todavía en marcha y compiten por los mismos recursos, lo que
+  // puede ser justo lo que causa que los fallos vengan "en rachas".
+  promise.cancel = ()=>{
+    cancelled = true;
+    if(img){ img.onload = null; img.onerror = null; img.src = ''; }
+    if(url){ try{ URL.revokeObjectURL(url); }catch(e){} }
+  };
+  return promise;
 }
 // Ruta de decodificación alternativa usando createImageBitmap. Algunos JPG con
 // marcadores poco comunes (ciertos celulares Android, apps de marca de agua)
@@ -1472,6 +1484,7 @@ function withTimeout(promise, ms, timeoutMsg){
     const timer = setTimeout(()=>{
       if(settled) return;
       settled = true;
+      if(typeof promise.cancel === 'function') promise.cancel();
       reject(new Error(timeoutMsg || 'timeout'));
     }, ms);
     promise.then(v=>{
@@ -1543,6 +1556,21 @@ async function loadAndCompressImage(file, maxDim=1400, quality=0.78){
         throw new Error('No se pudo convertir "'+file.name+'" desde HEIC/HEIF. El archivo podría estar dañado.');
       }
     }
+    // Último recurso: si el navegador se niega a decodificar el archivo por
+    // cualquier medio (aunque el archivo en sí sea válido — pasa con algunos
+    // JPG de ciertas apps/celulares que usan marcadores poco comunes),
+    // incrustamos los bytes originales tal cual, sin redimensionar. Esto evita
+    // que la foto desaparezca del PPTX aunque el navegador no la pueda
+    // "entender" para procesarla internamente.
+    try{
+      const rawDataURL = await new Promise((resolve,reject)=>{
+        const reader = new FileReader();
+        reader.onload = ()=>resolve(reader.result);
+        reader.onerror = ()=>reject(new Error('read-failed'));
+        reader.readAsDataURL(file);
+      });
+      return {dataURL: rawDataURL, w:null, h:null};
+    }catch(rawErr){ /* falls through to the error below */ }
     if(firstErr.message === 'decode-timeout'){
       throw new Error('"'+file.name+'" tardó demasiado en procesarse (posible sobrecarga del navegador con una tanda muy grande). Intenta generar en lotes más pequeños o vuelve a intentarlo.');
     }
