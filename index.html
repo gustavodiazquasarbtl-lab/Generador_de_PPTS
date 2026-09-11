@@ -1557,24 +1557,31 @@ async function loadAndCompressImage(file, maxDim=1400, quality=0.78){
       }
     }
     // Último recurso: si el navegador se niega a decodificar el archivo por
-    // cualquier medio (aunque el archivo en sí sea válido — pasa con algunos
-    // JPG de ciertas apps/celulares que usan marcadores poco comunes),
-    // incrustamos los bytes originales tal cual, sin redimensionar. Esto evita
-    // que la foto desaparezca del PPTX aunque el navegador no la pueda
-    // "entender" para procesarla internamente.
-    try{
-      const rawDataURL = await new Promise((resolve,reject)=>{
+    // cualquier medio (aunque el archivo en sí sea válido — o si la lectura
+    // falló por venir de una unidad de red inestable), incrustamos los bytes
+    // originales tal cual, sin redimensionar. Reintentamos varias veces con
+    // pausas reales, porque en unidades de red los fallos suelen ser
+    // momentáneos y una nueva lectura segundos después suele funcionar.
+    function readFileAsDataURL(f){
+      return new Promise((resolve,reject)=>{
         const reader = new FileReader();
         reader.onload = ()=>resolve(reader.result);
         reader.onerror = ()=>reject(new Error('read-failed'));
-        reader.readAsDataURL(file);
+        reader.readAsDataURL(f);
       });
-      return {dataURL: rawDataURL, w:null, h:null};
-    }catch(rawErr){ /* falls through to the error below */ }
+    }
+    for(let attempt=0; attempt<4; attempt++){
+      try{
+        const rawDataURL = await readFileAsDataURL(file);
+        return {dataURL: rawDataURL, w:null, h:null};
+      }catch(rawErr){
+        if(attempt < 3) await new Promise(r=>setTimeout(r, 1500));
+      }
+    }
     if(firstErr.message === 'decode-timeout'){
       throw new Error('"'+file.name+'" tardó demasiado en procesarse (posible sobrecarga del navegador con una tanda muy grande). Intenta generar en lotes más pequeños o vuelve a intentarlo.');
     }
-    throw new Error('No se pudo leer "'+file.name+'". El archivo podría estar dañado o en un formato no compatible. Conviértela a JPG/PNG e inténtalo de nuevo.');
+    throw new Error('No se pudo leer "'+file.name+'" después de varios intentos. Si las fotos están en una unidad de red (ej. Z:\\...), copia la carpeta a tu disco local (C:\\...) e inténtalo de nuevo — la lectura por red puede fallar de forma intermitente. Si están en tu disco local, el archivo podría estar dañado.');
   }
 }
 function compressDataURL(dataURL, maxDim=1400, quality=0.8){
