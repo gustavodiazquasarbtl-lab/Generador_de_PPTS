@@ -927,7 +927,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     <div class="brand-mark">QB</div>
     <div>
       <h1>Generador de reportes (Power Point + PDF)</h1>
-      <p>Arma presentaciones de reportes fotográficos con el diseño corporativo de Quasar BTL y descárgalas en PPTX / PDF.</p>
+      <p>Arma presentaciones de reportes fotográficos con el diseño de Quasar BTL y descárgalas en PPTX / PDF.</p>
       <div class="badge-priv"><svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Todo se procesa en tu navegador — las fotos nunca se suben a un servidor</div>
     </div>
   </div>
@@ -948,7 +948,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       <div class="mode-card" data-mode="existente" onclick="selectAppMode('existente')">
         <div class="mode-icon"><svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a4 4 0 0 1-1-7.87A5.5 5.5 0 0 1 16.5 8.5 4.5 4.5 0 0 1 17 18H7z"/><path d="M12 12v6M9 15l3-3 3 3"/></svg></div>
         <div class="mode-title">Aplicar formato a una presentación existente</div>
-        <div class="mode-desc">Sube un PPT que ya armaste con tus fotos y aplícale el diseño corporativo automáticamente.</div>
+        <div class="mode-desc">Sube un PPT que ya armaste con tus fotos y aplícale el diseño automáticamente.</div>
       </div>
     </div>
   </div>
@@ -3198,7 +3198,7 @@ async function generateOutput(kind){
         // le da tiempo al navegador de liberar memoria de verdad antes de
         // arrancar la siguiente tanda de fotos, en vez de encadenar todo sin
         // descanso y llegar saturado a las partes finales.
-        log('Pausa breve antes de la siguiente parte...');
+        log('Cargando...');
         await new Promise(r=>setTimeout(r, 2000));
       }
     }
