@@ -1391,6 +1391,32 @@ const DEFAULT_LAYOUT = {
     }
   }
 };
+/* Layout especial de una sola fila para 4 fotos en modo "Organizar por Tiendas/Elementos"
+   (en los demas modos, 4 fotos siguen usando la grilla 2x2 de DEFAULT_LAYOUT.photos[4]). */
+const AUTO_PHOTOS_4 = {
+  slots: [
+    {x:0.94, y:1.75, w:2.75, h:3.35},
+    {x:3.84, y:1.75, w:2.75, h:3.35},
+    {x:6.74, y:1.75, w:2.75, h:3.35},
+    {x:9.64, y:1.75, w:2.75, h:3.35}
+  ],
+  dates: [
+    {x:0.94, y:5.22, w:2.75, h:0.3, fontSize:11, fontFamily:'Arial', color:null},
+    {x:3.84, y:5.22, w:2.75, h:0.3, fontSize:11, fontFamily:'Arial', color:null},
+    {x:6.74, y:5.22, w:2.75, h:0.3, fontSize:11, fontFamily:'Arial', color:null},
+    {x:9.64, y:5.22, w:2.75, h:0.3, fontSize:11, fontFamily:'Arial', color:null}
+  ],
+  storeLabels: [
+    {x:0.94, y:1.38, w:2.75, h:0.32, fontSize:12, fontFamily:'Arial', color:null},
+    {x:3.84, y:1.38, w:2.75, h:0.32, fontSize:12, fontFamily:'Arial', color:null},
+    {x:6.74, y:1.38, w:2.75, h:0.32, fontSize:12, fontFamily:'Arial', color:null},
+    {x:9.64, y:1.38, w:2.75, h:0.32, fontSize:12, fontFamily:'Arial', color:null}
+  ]
+};
+function getContentLayout(slide, n){
+  if(slide.auto && n===4) return AUTO_PHOTOS_4;
+  return LAYOUT.photos[n] || LAYOUT.photos[2];
+}
 let LAYOUT = deepClone(DEFAULT_LAYOUT);
 function resetLayoutAll(){ LAYOUT = deepClone(DEFAULT_LAYOUT); }
 function resetLayoutTemplate(tpl){
@@ -2154,36 +2180,68 @@ function rebuildUploadArea(){
 }
 
 function buildFlatUploadZone(){
-  const holder = document.createElement('div');
-
   const wrap = document.createElement('div');
   wrap.className = 'upload-zone';
-  wrap.innerHTML = '<div class="icon">'+icon('image')+'</div><div class="title">Subir fotos</div><div class="desc">Click o arrastra hasta ~500 imágenes ('+state.photos.length+' cargadas)</div>';
+  wrap.innerHTML = '<div class="icon">'+icon('image')+'</div><div class="title">Subir fotos o carpeta completa</div><div class="desc">Click para elegir fotos, o arrastra aquí una carpeta completa — hasta ~500 imágenes ('+state.photos.length+' cargadas)</div>';
   const input = document.createElement('input');
   input.type = 'file'; input.accept = 'image/*,.heic,.heif,.tif,.tiff,.avif'; input.multiple = true;
   wrap.appendChild(input);
   wrap.onclick = ()=>input.click();
-  setupDrop(wrap, input);
   input.onchange = async ()=>{
     await processFilesFlat(Array.from(input.files));
   };
-  holder.appendChild(wrap);
-
-  const folderWrap = document.createElement('div');
-  folderWrap.className = 'upload-zone';
-  folderWrap.style.marginTop = '10px';
-  folderWrap.innerHTML = '<div class="icon">'+icon('folder')+'</div><div class="title">Subir carpeta completa</div><div class="desc">Selecciona la carpeta con todas las fotos — se suben todas de una vez</div>';
-  const folderInput = document.createElement('input');
-  folderInput.type = 'file'; folderInput.webkitdirectory = true; folderInput.multiple = true;
-  folderWrap.appendChild(folderInput);
-  folderWrap.onclick = (e)=>{ e.stopPropagation(); folderInput.click(); };
-  folderInput.onchange = async ()=>{
-    const imgFiles = Array.from(folderInput.files).filter(f=>/\.(jpe?g|png|heic|heif|tiff?|avif|webp|bmp)$/i.test(f.name));
-    await processFilesFlat(imgFiles);
-  };
-  holder.appendChild(folderWrap);
-
-  return holder;
+  setupDropFilesOrFolder(wrap, async (files)=>{
+    await processFilesFlat(files);
+  });
+  return wrap;
+}
+/* Igual que setupDrop, pero si lo que se arrastra es una carpeta completa, la
+   recorre recursivamente (incluyendo subcarpetas) y junta todas las fotos
+   encontradas. Si se arrastran fotos sueltas, funciona igual que antes. */
+function setupDropFilesOrFolder(zone, onFiles){
+  ['dragenter','dragover'].forEach(ev=>zone.addEventListener(ev, e=>{
+    e.preventDefault(); e.stopPropagation(); zone.classList.add('dragover');
+  }));
+  ['dragleave','drop'].forEach(ev=>zone.addEventListener(ev, e=>{
+    e.preventDefault(); e.stopPropagation(); zone.classList.remove('dragover');
+  }));
+  zone.addEventListener('drop', async (e)=>{
+    const items = e.dataTransfer.items;
+    let files = [];
+    if(items && items.length && items[0].webkitGetAsEntry){
+      const entries = Array.from(items).map(it=>it.webkitGetAsEntry()).filter(Boolean);
+      files = await readEntriesRecursively(entries);
+    } else {
+      files = Array.from(e.dataTransfer.files || []);
+    }
+    files = files.filter(isImageFile);
+    if(files.length) onFiles(files);
+  });
+}
+function readEntriesRecursively(entries){
+  return new Promise((resolve)=>{
+    const result = [];
+    let pending = entries.length;
+    if(pending===0){ resolve(result); return; }
+    entries.forEach(entry=>{
+      if(entry.isFile){
+        entry.file(f=>{ result.push(f); if(--pending===0) resolve(result); }, ()=>{ if(--pending===0) resolve(result); });
+      } else if(entry.isDirectory){
+        const reader = entry.createReader();
+        const readBatch = ()=>{
+          reader.readEntries(async (subEntries)=>{
+            if(subEntries.length===0){ if(--pending===0) resolve(result); return; }
+            const subFiles = await readEntriesRecursively(subEntries);
+            result.push(...subFiles);
+            readBatch();
+          }, ()=>{ if(--pending===0) resolve(result); });
+        };
+        readBatch();
+      } else {
+        if(--pending===0) resolve(result);
+      }
+    });
+  });
 }
 
 function buildBucketUploadZone(tienda, elemento){
@@ -2615,7 +2673,8 @@ function buildSlideModel(){
         title: titleMode==='none' ? '' : headerText,
         footer: footerText || '',
         showDate,
-        photos: group
+        photos: group,
+        auto: state.mode === 'auto'
       });
     }
   }
@@ -2750,7 +2809,7 @@ async function drawSlide(slide, design, skippedOut){
       ctx.fillText(slide.title.toUpperCase(), (tcfg.x+tcfg.w)*IN, tcfg.y*IN + tcfg.fontSize*1.4);
     }
     const n = slide.photos.length;
-    const layout = LAYOUT.photos[n] || LAYOUT.photos[2];
+    const layout = getContentLayout(slide, n);
     const slots = layout.slots;
     const dateSlots = layout.dates;
     for(let i=0;i<slots.length;i++){
@@ -2816,7 +2875,8 @@ async function drawSlide(slide, design, skippedOut){
     const perCol = twoCol ? Math.ceil(list.length/2) : list.length;
     const rowH = 0.4*IN;
     const startY = (cfg.y + 1.2) * IN;
-    const colXs = twoCol ? [1.2*IN, 7.2*IN] : [3.5*IN];
+    // Margenes generosos para no quedar detras de los paneles de color de los laterales.
+    const colXs = twoCol ? [1.9*IN, 6.9*IN] : [3.67*IN];
     ctx.textAlign = 'left';
     ctx.font = '400 15px ' + cfg.fontFamily + ', sans-serif';
     list.forEach((name, idx)=>{
@@ -2951,7 +3011,7 @@ async function buildPptxFile(slideModel, filename, onProgress){
         });
       }
       const n = slide.photos.length;
-      const layout = LAYOUT.photos[n] || LAYOUT.photos[2];
+      const layout = getContentLayout(slide, n);
       const slots = layout.slots;
       const dateSlots = layout.dates;
       for(let i=0;i<slots.length;i++){
@@ -3020,15 +3080,16 @@ async function buildPptxFile(slideModel, filename, onProgress){
         const col = twoCol ? Math.floor(idx/perCol) : 0;
         colTexts[col].push({text:(idx+1)+'. '+name, options:{breakLine:true}});
       });
-      const colW = twoCol ? 5.6 : 8.0;
-      const colX1 = twoCol ? 0.9 : 2.67;
+      // Margenes generosos para no quedar detras de los paneles de color de los laterales.
+      const colW = twoCol ? 5.0 : 6.0;
+      const colX1 = twoCol ? 1.9 : 3.67;
       s.addText(colTexts[0], {
         x:colX1, y:1.6, w:colW, h:5.2,
         fontSize:14, fontFace:cfg.fontFamily, color:theme.tableBodyColor, align:'left', valign:'top'
       });
       if(twoCol && colTexts[1].length){
         s.addText(colTexts[1], {
-          x:6.8, y:1.6, w:colW, h:5.2,
+          x:6.9, y:1.6, w:colW, h:5.2,
           fontSize:14, fontFace:cfg.fontFamily, color:theme.tableBodyColor, align:'left', valign:'top'
         });
       }
