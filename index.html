@@ -1144,7 +1144,6 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     </div>
     <div class="editor-tabs" id="editorTabs">
       <button class="editor-tab selected" data-tpl="cover" onclick="switchEditorTemplate('cover')">Portada</button>
-      <button class="editor-tab" data-tpl="store" onclick="switchEditorTemplate('store')">Tienda</button>
       <button class="editor-tab" data-tpl="content" onclick="switchEditorTemplate('content')">Contenido</button>
       <button class="editor-tab" data-tpl="gracias" onclick="switchEditorTemplate('gracias')">Gracias</button>
     </div>
@@ -1326,6 +1325,7 @@ const DEFAULT_LAYOUT = {
   contentTitle: {x:0.69, y:0.28, w:11.94, h:0.64, fontSize:26, fontFamily:'Arial', color:null},
   footer: {x:3.889, y:6.85, w:5.556, h:0.34, fontSize:12, fontFamily:'Arial', color:null},
   graciasTitle: {x:0.6, y:0.5, w:7.5, h:1.2, fontSize:32, fontFamily:'Arial', color:null},
+  graciasTitleCenter: {x:2.917, y:3.44, w:7.5, h:1.2, fontSize:32, fontFamily:'Arial', color:null},
   photos: {
     1: {
       slots: [
@@ -1419,19 +1419,27 @@ function getContentLayout(slide, n){
   if(slide.auto && n===4) return AUTO_PHOTOS_4;
   return LAYOUT.photos[n] || LAYOUT.photos[2];
 }
+/* El texto "GRACIAS" usa una caja distinta según el diseño: el Diseño 1
+   (Catman) lo alinea a la izquierda arriba, el Diseño 2 (Retail) lo centra
+   en la diapositiva. Antes el centrado ignoraba la posición configurada y
+   siempre dibujaba en el centro exacto del lienzo, por eso no se podía
+   mover ni editar en el editor visual. */
+function getGraciasCfg(design){
+  const theme = getActiveTheme(design != null ? design : state.design);
+  return theme.graciasAlign === 'left' ? LAYOUT.graciasTitle : LAYOUT.graciasTitleCenter;
+}
 let LAYOUT = deepClone(DEFAULT_LAYOUT);
 function resetLayoutAll(){ LAYOUT = deepClone(DEFAULT_LAYOUT); }
 function resetLayoutTemplate(tpl){
   const def = deepClone(DEFAULT_LAYOUT);
   if(tpl==='cover') LAYOUT.coverTitle = def.coverTitle;
-  else if(tpl==='store'){ LAYOUT.storeTitle = def.storeTitle; LAYOUT.storeTable = def.storeTable; }
   else if(tpl==='content'){
     const n = getPhotosPerSlide();
     LAYOUT.contentTitle = def.contentTitle;
     LAYOUT.footer = def.footer;
     LAYOUT.photos[n] = def.photos[n];
   }
-  else if(tpl==='gracias') LAYOUT.graciasTitle = def.graciasTitle;
+  else if(tpl==='gracias'){ LAYOUT.graciasTitle = def.graciasTitle; LAYOUT.graciasTitleCenter = def.graciasTitleCenter; }
 }
 
 function getPhotosPerSlide(){
@@ -2922,7 +2930,7 @@ async function drawSlide(slide, design, skippedOut){
   }
   else if(slide.type === 'gracias'){
     await drawBgAsync(theme.bgGracias);
-    const gcfg = LAYOUT.graciasTitle;
+    const gcfg = getGraciasCfg(design);
     ctx.fillStyle = '#' + (gcfg.color || theme.graciasColor);
     ctx.font = '700 ' + (gcfg.fontSize*1.25) + 'px ' + gcfg.fontFamily + ', sans-serif';
     if(theme.graciasAlign === 'left'){
@@ -2930,7 +2938,7 @@ async function drawSlide(slide, design, skippedOut){
       ctx.fillText('GRACIAS', gcfg.x*IN, gcfg.y*IN + gcfg.fontSize*1.25);
     } else {
       ctx.textAlign = 'center';
-      ctx.fillText('GRACIAS', W/2, H/2);
+      ctx.fillText('GRACIAS', (gcfg.x+gcfg.w/2)*IN, gcfg.y*IN + gcfg.fontSize*1.25);
     }
   }
   return canvas;
@@ -3124,13 +3132,13 @@ async function buildPptxFile(slideModel, filename, onProgress){
       });
     }
     else if(slide.type === 'gracias'){
-      const gcfg = LAYOUT.graciasTitle;
+      const gcfg = getGraciasCfg(state.design);
       s.addImage({data: theme.bgGracias, x:0, y:0, w:SLIDE_W, h:SLIDE_H});
       s.addText('GRACIAS', theme.graciasAlign==='left' ? {
         x:gcfg.x, y:gcfg.y, w:gcfg.w, h:gcfg.h,
         fontSize:gcfg.fontSize, fontFace:gcfg.fontFamily, bold:true, color:(gcfg.color||theme.graciasColor), align:'left', valign:'top'
       } : {
-        x:0, y:0, w:SLIDE_W, h:SLIDE_H,
+        x:gcfg.x, y:gcfg.y, w:gcfg.w, h:gcfg.h,
         fontSize:gcfg.fontSize, fontFace:gcfg.fontFamily, bold:true, color:(gcfg.color||theme.graciasColor), align:'center', valign:'middle'
       });
     }
@@ -3362,7 +3370,15 @@ async function extractContentSlidesFromPptx(file, onProgress){
     const slideTitle = orphanTitle ? orphanTitle.text : '';
 
     if(images.length){
-      const perSlide = getPhotosPerSlide();
+      // Antes se reagrupaban las fotos usando el valor de "Fotos por diapositiva"
+      // del paso 2 (un ajuste pensado para fotos de auditoría nuevas), lo cual
+      // no tiene relación con cuántas fotos traía cada diapositiva del PPTX
+      // subido. Eso hacía que, por ejemplo, una sola foto grande terminara
+      // compartiendo diapositiva con otra y se viera reducida/deformada.
+      // Ahora respetamos la cantidad real de fotos que había en cada
+      // diapositiva original (con un máximo de 4, que es lo que soportan las
+      // plantillas), para conservar su tamaño y proporción tal como estaban.
+      const perSlide = Math.max(1, Math.min(images.length, 4));
       for(let i=0;i<images.length;i+=perSlide){
         const group = [];
         let groupHasLabel = false;
@@ -3496,7 +3512,7 @@ function getEditorElements(tpl){
     return els;
   }
   if(tpl==='gracias'){
-    return [{id:'graciasTitle', label:'Texto Gracias', isText:true, cfg:LAYOUT.graciasTitle}];
+    return [{id:'graciasTitle', label:'Texto Gracias', isText:true, cfg:getGraciasCfg()}];
   }
   return [];
 }
