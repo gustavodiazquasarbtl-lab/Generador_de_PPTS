@@ -733,6 +733,31 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     background:var(--accent-soft);color:var(--navy-900);border-radius:20px;padding:3px 11px;font-size:11.5px;font-weight:700;flex-shrink:0;
   }
   .bucket-card .count-badge.has{background:var(--ok-soft);color:var(--ok);}
+  .thumb-grid{
+    display:grid;grid-template-columns:repeat(auto-fill, minmax(86px, 1fr));gap:8px;margin-bottom:12px;
+  }
+  .thumb-item{
+    position:relative;aspect-ratio:1/1;border-radius:8px;overflow:hidden;border:1px solid var(--border);cursor:zoom-in;background:#f3f4f6;
+  }
+  .thumb-item img{width:100%;height:100%;object-fit:cover;display:block;}
+  .thumb-del{
+    position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;border:none;
+    background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;
+    padding:0;
+  }
+  .thumb-del:hover{background:#dc2626;}
+  .thumb-del svg{width:12px;height:12px;}
+  .thumb-tag{
+    position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);color:#fff;font-size:10px;
+    padding:2px 5px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .lightbox-overlay{
+    display:none;position:fixed;inset:0;background:rgba(15,23,42,.85);z-index:9999;
+    align-items:center;justify-content:center;flex-direction:column;gap:12px;padding:30px;cursor:zoom-out;
+  }
+  .lightbox-overlay.open{display:flex;}
+  .lightbox-img{max-width:90vw;max-height:85vh;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,.5);cursor:default;}
+  .lightbox-caption{color:#fff;font-size:13px;opacity:.85;}
   .elemento-sub{
     display:flex;align-items:center;justify-content:space-between;
     padding:7px 0;border-top:1px solid #f0f1f5;font-size:12.5px;
@@ -983,12 +1008,14 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       </select>
     </div>
 
-    <label class="field-label" style="margin-top:18px;">Fotos por diapositiva</label>
-    <div class="radio-group">
-      <label class="radio-opt"><input type="radio" name="photosPerSlide" value="1"> 1 foto por diapositiva</label>
-      <label class="radio-opt"><input type="radio" name="photosPerSlide" value="2" checked> 2 fotos por diapositiva</label>
-      <label class="radio-opt"><input type="radio" name="photosPerSlide" value="3"> 3 fotos por diapositiva</label>
-      <label class="radio-opt"><input type="radio" name="photosPerSlide" value="4"> 4 fotos por diapositiva</label>
+    <div id="photosPerSlideBlock">
+      <label class="field-label" style="margin-top:18px;">Fotos por diapositiva</label>
+      <div class="radio-group">
+        <label class="radio-opt"><input type="radio" name="photosPerSlide" value="1"> 1 foto por diapositiva</label>
+        <label class="radio-opt"><input type="radio" name="photosPerSlide" value="2" checked> 2 fotos por diapositiva</label>
+        <label class="radio-opt"><input type="radio" name="photosPerSlide" value="3"> 3 fotos por diapositiva</label>
+        <label class="radio-opt"><input type="radio" name="photosPerSlide" value="4"> 4 fotos por diapositiva</label>
+      </div>
     </div>
   </div>
   </div><!-- /sharedFields -->
@@ -1010,12 +1037,46 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       <input type="checkbox" id="reskinAddCoverGracias" checked>
       <div><div class="lbl">Agregar portada y diapositiva de "Gracias"</div><div class="sub">Usa el título definido en el paso 1</div></div>
     </div>
+  </div>
+
+  <!-- 3. Titulos -->
+  <div class="card">
+    <h2><span class="num">3</span> Títulos de cada diapositiva</h2>
+    <p class="hint">Controla qué texto aparece encabezando cada bloque de fotos.</p>
+    <label class="field-label">Título de las diapositivas de contenido</label>
+    <div class="checkbox-line" style="margin-top:6px;">
+      <input type="checkbox" id="reskinUseElementTitle" onchange="onReskinTitleModeChange()">
+      <div><div class="lbl">Elementos</div><div class="sub">Opcional — si lo activas, este texto reemplaza al título que traiga cada diapositiva del PPT original</div></div>
+    </div>
+    <div id="reskinElementBlock" class="indent-block" style="display:none; margin-top:10px;">
+      <label class="field-label">Nombre del elemento (se aplica a todas las diapositivas)</label>
+      <input type="text" id="reskinElementName" placeholder="Ej: EXHIBIDOR CABECERA" style="width:100%; padding:9px 12px; border:1px solid #d0d5dd; border-radius:8px; font-size:14px;">
+    </div>
+  </div>
+
+  <!-- 4. Descarga -->
+  <div class="card accent-card">
+    <h2><span class="num">4</span> Generar y descargar</h2>
+
+    <div class="checkbox-line">
+      <input type="checkbox" id="reskinSplitEvery45">
+      <div><div class="lbl">Dividir en archivos de 45 diapositivas</div><div class="sub">Recomendado para decks grandes (varios cientos de fotos)</div></div>
+    </div>
 
     <div class="summary-line" id="reskinSummary">Ningún archivo cargado.</div>
 
     <div class="actions-row">
+      <button class="btn ghost" onclick="previewCover()">Vista previa de portada</button>
+      <button class="btn ghost" onclick="previewContent()">Vista previa de contenido</button>
+      <button class="btn ghost" onclick="openLayoutEditor()"><svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 1 1 0-18c4 0 8 2.5 8 6.5 0 2-1.5 3.5-3.5 3.5H15a1.5 1.5 0 0 0-1 2.6c.4.4.6.9.6 1.4 0 1.1-1 2-2.6 2z"/><circle cx="7.5" cy="10.5" r="1" fill="currentColor" stroke="none"/><circle cx="10.5" cy="7" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="7.5" r="1" fill="currentColor" stroke="none"/></svg> Personalizar posiciones y letras</button>
       <button class="btn primary" id="btnReskinGenerate" onclick="generateReskin('both')" disabled>Aplicar formato y descargar (PPTX + PDF)</button>
     </div>
+
+    <div class="progress-wrap" id="reskinProgressWrap" style="display:none;">
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="reskinProgressFill"></div></div>
+      <div class="progress-label" id="reskinProgressLabel">Procesando...</div>
+    </div>
+    <div class="preview-box" id="reskinPreviewBox"></div>
   </div>
   </div>
 
@@ -1220,6 +1281,7 @@ function selectAppMode(mode){
   document.getElementById('sharedFields').style.display = '';
   document.getElementById('flowNueva').style.display = mode === 'nueva' ? '' : 'none';
   document.getElementById('flowExistente').style.display = mode === 'existente' ? '' : 'none';
+  document.getElementById('photosPerSlideBlock').style.display = mode === 'existente' ? 'none' : '';
 }
 
 /* ===================== CLIPBOARD PASTE HELPER ===================== */
@@ -1546,13 +1608,17 @@ window.addEventListener('unhandledrejection', function(e){
   try{ log('\u26A0 Error inesperado (promesa): ' + errMsg(e.reason)); }catch(_){}
 });
 function setProgress(pct, label){
-  const wrap = document.getElementById('progressWrap');
+  const wrapId = state.appMode === 'existente' ? 'reskinProgressWrap' : 'progressWrap';
+  const fillId = state.appMode === 'existente' ? 'reskinProgressFill' : 'progressFill';
+  const labelId = state.appMode === 'existente' ? 'reskinProgressLabel' : 'progressLabel';
+  const wrap = document.getElementById(wrapId);
   wrap.style.display = 'block';
-  document.getElementById('progressFill').style.width = pct + '%';
-  document.getElementById('progressLabel').textContent = label;
+  document.getElementById(fillId).style.width = pct + '%';
+  document.getElementById(labelId).textContent = label;
 }
 function hideProgress(){
   document.getElementById('progressWrap').style.display = 'none';
+  document.getElementById('reskinProgressWrap').style.display = 'none';
 }
 function errMsg(err){
   if(err instanceof Error) return err.message;
@@ -1788,6 +1854,13 @@ function pushToBucket(tienda, elemento, rec){
 }
 function bucketCount(tienda, elemento){
   return (state.buckets[bucketKey(tienda, elemento)] || []).length;
+}
+function removeBucketPhoto(tienda, elemento, idx){
+  const key = bucketKey(tienda, elemento);
+  const list = state.buckets[key];
+  if(!list || !list[idx]) return;
+  list.splice(idx, 1);
+  rebuildUploadArea();
 }
 function clearBucket(tienda, elemento){
   const label = [tienda, elemento].filter(Boolean).join(' / ');
@@ -2254,6 +2327,66 @@ function readEntriesRecursively(entries){
   });
 }
 
+/* Miniaturas de las fotos ya cargadas en un bucket: click para ampliar,
+   icono de basurero para eliminar esa foto individual. */
+function buildPhotoThumbGrid(photos, onDelete){
+  const grid = document.createElement('div');
+  grid.className = 'thumb-grid';
+  photos.forEach((p, idx)=>{
+    const url = URL.createObjectURL(p.file);
+    const item = document.createElement('div');
+    item.className = 'thumb-item';
+    const img = document.createElement('img');
+    img.src = url;
+    img.loading = 'lazy';
+    img.alt = p.name;
+    item.appendChild(img);
+    item.onclick = (e)=>{ e.stopPropagation(); openPhotoLightbox(url, p.name); };
+
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'thumb-del';
+    del.title = 'Eliminar esta foto';
+    del.innerHTML = icon('trash');
+    del.onclick = (e)=>{ e.stopPropagation(); onDelete(idx); };
+    item.appendChild(del);
+
+    if(p.label){
+      const tag = document.createElement('div');
+      tag.className = 'thumb-tag';
+      tag.textContent = p.label;
+      item.appendChild(tag);
+    }
+    grid.appendChild(item);
+  });
+  return grid;
+}
+
+function openPhotoLightbox(url, name){
+  let modal = document.getElementById('photoLightbox');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'photoLightbox';
+    modal.className = 'lightbox-overlay';
+    modal.onclick = ()=> modal.classList.remove('open');
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = '';
+  const img = document.createElement('img');
+  img.src = url;
+  img.className = 'lightbox-img';
+  img.onclick = (e)=> e.stopPropagation();
+  modal.appendChild(img);
+  if(name){
+    const cap = document.createElement('div');
+    cap.className = 'lightbox-caption';
+    cap.textContent = name;
+    cap.onclick = (e)=> e.stopPropagation();
+    modal.appendChild(cap);
+  }
+  modal.classList.add('open');
+}
+
 function buildBucketUploadZone(tienda, elemento){
   const key = bucketKey(tienda, elemento);
   const label = tienda || elemento;
@@ -2281,6 +2414,7 @@ function buildBucketUploadZone(tienda, elemento){
     clearBtn.style.marginBottom = '10px';
     clearBtn.onclick = (e)=>{ e.stopPropagation(); clearBucket(tienda, elemento); };
     body.appendChild(clearBtn);
+    body.appendChild(buildPhotoThumbGrid(state.buckets[key]||[], idx=>removeBucketPhoto(tienda, elemento, idx)));
   }
 
   const wrap = document.createElement('div');
@@ -2875,7 +3009,18 @@ async function drawSlide(slide, design, skippedOut){
       if(!img) continue;
       const box = slots[i];
       const bx = box.x*IN, by = box.y*IN, bw = box.w*IN, bh = box.h*IN;
-      const scale = Math.min(bw/img.width, bh/img.height);
+      let scale;
+      if(slide.reskin){
+        // No forzamos que todas las fotos de la fila midan lo mismo de alto:
+        // se ajustan al ancho de su columna y conservan su propia proporción.
+        // Un tope generoso evita que una foto muy alargada invada el título
+        // o el pie de página; igual quedan centradas sobre la misma línea.
+        scale = bw/img.width;
+        const maxH = bh*1.35;
+        if(img.height*scale > maxH) scale = maxH/img.height;
+      } else {
+        scale = Math.min(bw/img.width, bh/img.height);
+      }
       const dw = img.width*scale, dh = img.height*scale;
       const dx = bx + (bw-dw)/2, dy = by + (bh-dh)/2;
       ctx.drawImage(img, dx, dy, dw, dh);
@@ -2945,15 +3090,30 @@ async function drawSlide(slide, design, skippedOut){
 }
 
 /* ===================== PREVIEW ===================== */
+function getPreviewBox(){
+  return document.getElementById(state.appMode === 'existente' ? 'reskinPreviewBox' : 'previewBox');
+}
+
 async function previewCover(){
   const lines = document.getElementById('pptTitle').value.split('\n').filter(l=>l.trim().length);
   setProgress(0, 'Generando vista previa...');
   const canvas = await drawSlide({type:'cover', lines}, state.design);
   hideProgress();
-  const box = document.getElementById('previewBox');
+  const box = getPreviewBox();
   box.innerHTML = '';
   box.dataset.kind = 'cover';
   box.appendChild(canvas);
+}
+
+function getReskinSampleContentSlide(){
+  if(!reskinSlideModel) return null;
+  let slide = reskinSlideModel.find(s=>s.type==='content' && s.photos && s.photos.some(Boolean)) ||
+              reskinSlideModel.find(s=>s.type==='content');
+  if(!slide) return null;
+  const useElementTitle = document.getElementById('reskinUseElementTitle').checked;
+  const elementName = document.getElementById('reskinElementName').value.trim();
+  if(useElementTitle && elementName) slide = Object.assign({}, slide, {title: elementName});
+  return slide;
 }
 
 function getSamplePhotosForPreview(n){
@@ -2965,6 +3125,18 @@ function getSamplePhotosForPreview(n){
 }
 
 async function previewContent(){
+  if(state.appMode === 'existente'){
+    const slide = getReskinSampleContentSlide();
+    if(!slide){ alert('Primero sube un PPT válido en el paso 2.'); return; }
+    setProgress(0, 'Generando vista previa...');
+    const canvas = await drawSlide(slide, state.design);
+    hideProgress();
+    const box = getPreviewBox();
+    box.innerHTML = '';
+    box.dataset.kind = 'content';
+    box.appendChild(canvas);
+    return;
+  }
   const n = getPhotosPerSlide();
   const sample = getSamplePhotosForPreview(n);
   if(sample.length === 0){
@@ -2989,7 +3161,7 @@ async function previewContent(){
   setProgress(0, 'Generando vista previa...');
   const canvas = await drawSlide(slide, state.design);
   hideProgress();
-  const box = document.getElementById('previewBox');
+  const box = getPreviewBox();
   box.innerHTML = '';
   box.dataset.kind = 'content';
   box.appendChild(canvas);
@@ -3073,7 +3245,30 @@ async function buildPptxFile(slideModel, filename, onProgress){
         }
         if(dataURL){
           const box = slots[i];
-          s.addImage({data:dataURL, x:box.x, y:box.y, w:box.w, h:box.h, sizing:{type:'contain', w:box.w, h:box.h}});
+          if(slide.reskin){
+            // Igual que en la vista previa: cada foto conserva su propia
+            // proporción (según su tamaño real en el PPT original) en vez de
+            // forzarla a la altura del recuadro, para que no se vea deformada
+            // ni recortada para "empatar" con la foto de al lado.
+            const dims = await new Promise(res=>{
+              const im = new Image();
+              im.onload = ()=>res({width:im.naturalWidth, height:im.naturalHeight});
+              im.onerror = ()=>res(null);
+              im.src = dataURL;
+            });
+            if(dims && dims.width && dims.height){
+              let scale = box.w/dims.width;
+              const maxH = box.h*1.35;
+              if(dims.height*scale > maxH) scale = maxH/dims.height;
+              const dw = dims.width*scale, dh = dims.height*scale;
+              const dx = box.x + (box.w-dw)/2, dy = box.y + (box.h-dh)/2;
+              s.addImage({data:dataURL, x:dx, y:dy, w:dw, h:dh});
+            } else {
+              s.addImage({data:dataURL, x:box.x, y:box.y, w:box.w, h:box.h, sizing:{type:'contain', w:box.w, h:box.h}});
+            }
+          } else {
+            s.addImage({data:dataURL, x:box.x, y:box.y, w:box.w, h:box.h, sizing:{type:'contain', w:box.w, h:box.h}});
+          }
           if(slide.showDate && p.label){
             const dcfg = dateSlots[i];
             s.addText(p.label, {
@@ -3394,7 +3589,8 @@ async function extractContentSlidesFromPptx(file, onProgress){
           title: i===0 ? slideTitle : '', // el título real (si existía) se conserva solo en la primera sub-diapositiva
           footer:'',
           showDate: groupHasLabel, // reutiliza el slot de etiqueta bajo cada foto para las leyendas originales
-          photos: group
+          photos: group,
+          reskin: true // evita forzar la misma altura entre fotos de distinto tamaño/proporción
         });
       }
     } else if(textBoxes.length){
@@ -3439,31 +3635,70 @@ async function handleReskinFile(file){
   }
 }
 
+function chunkReskinSlides(model, size, hasCoverGracias){
+  if(!hasCoverGracias){
+    const chunks = [];
+    for(let i=0;i<model.length;i+=size) chunks.push(model.slice(i, i+size));
+    return chunks.length ? chunks : [[]];
+  }
+  return chunkSlides(model, size);
+}
+
+function onReskinTitleModeChange(){
+  const on = document.getElementById('reskinUseElementTitle').checked;
+  document.getElementById('reskinElementBlock').style.display = on ? '' : 'none';
+}
+
 async function generateReskin(kind){
   if(!reskinSlideModel || reskinSlideModel.length===0){ alert('Primero sube un PPT válido con contenido.'); return; }
   const btn = document.getElementById('btnReskinGenerate');
   btn.disabled = true;
   try{
     let model = reskinSlideModel.slice();
+    const useElementTitle = document.getElementById('reskinUseElementTitle').checked;
+    const elementName = document.getElementById('reskinElementName').value.trim();
+    if(useElementTitle && elementName){
+      model = model.map(s=> s.type==='content' ? Object.assign({}, s, {title: elementName}) : s);
+    }
     if(document.getElementById('reskinAddCoverGracias').checked){
       const lines = document.getElementById('pptTitle').value.split('\n').filter(l=>l.trim().length);
       model = [{type:'cover', lines}, ...model, {type:'gracias'}];
     }
     const baseTitle = (reskinFile.name.replace(/\.pptx$/i,'') || 'Presentacion').replace(/[^a-zA-Z0-9 _-]/g,'').replace(/\s+/g,'_').slice(0,40) + '_formateado';
     const kinds = kind==='both' ? ['pptx','pdf'] : [kind];
-    for(const k of kinds){
-      if(k==='pptx'){
-        await buildPptxFile(model, baseTitle+'.pptx');
-      } else {
-        await buildPdfFile(model, baseTitle+'.pdf');
+    const split = document.getElementById('reskinSplitEvery45').checked;
+    const groups = split ? chunkReskinSlides(model, 45, document.getElementById('reskinAddCoverGracias').checked) : [model];
+    const totalSteps = groups.length * kinds.length;
+    let stepDone = 0;
+    for(let i=0;i<groups.length;i++){
+      const suffix = groups.length>1 ? ('_Parte' + (i+1)) : '';
+      const partLabel = groups.length>1 ? (' (parte '+(i+1)+'/'+groups.length+')') : '';
+      for(const k of kinds){
+        if(k==='pptx'){
+          await buildPptxFile(groups[i], baseTitle+suffix+'.pptx', (done,total)=>{
+            setProgress(Math.round((stepDone+(total?done/total:1))/totalSteps*100), 'Generando PPTX'+partLabel+'... ('+done+'/'+total+' fotos)');
+          });
+        } else {
+          await buildPdfFile(groups[i], baseTitle+suffix+'.pdf', (done,total)=>{
+            setProgress(Math.round((stepDone+(total?done/total:1))/totalSteps*100), 'Generando PDF'+partLabel+'... ('+done+'/'+total+' diapositivas)');
+          });
+        }
+        stepDone++;
+        log('Generado (formato aplicado): ' + baseTitle + suffix + '.' + k);
+        await new Promise(r=>setTimeout(r, 300));
       }
-      log('Generado (formato aplicado): ' + baseTitle + '.' + k);
-      await new Promise(r=>setTimeout(r, 300));
+      if(i < groups.length-1){
+        log('Cargando...');
+        await new Promise(r=>setTimeout(r, 2000));
+      }
     }
+    setProgress(100, 'Listo.');
+    setTimeout(hideProgress, 800);
   }catch(err){
     const msg = errMsg(err);
     alert('Ocurrió un error aplicando el formato: ' + msg);
     log('Error aplicando formato: ' + msg);
+    hideProgress();
   }finally{
     btn.disabled = false;
   }
@@ -3502,7 +3737,11 @@ function getEditorElements(tpl){
     ];
   }
   if(tpl==='content'){
-    const n = getPhotosPerSlide();
+    let n = getPhotosPerSlide();
+    if(state.appMode === 'existente'){
+      const reskinSlide = getReskinSampleContentSlide();
+      if(reskinSlide) n = reskinSlide.photos.length;
+    }
     const layout = getContentLayout({auto: state.mode === 'auto'}, n);
     const els = [{id:'contentTitle', label:'Título', isText:true, cfg:LAYOUT.contentTitle}];
     layout.slots.forEach((s,i)=> els.push({id:'photo'+i, label:'Foto '+(i+1), isText:false, cfg:s}));
@@ -3549,6 +3788,10 @@ function buildEditorSampleSlide(tpl){
     return {type:'store', tienda, elementos};
   }
   if(tpl === 'content'){
+    if(state.appMode === 'existente'){
+      const reskinSlide = getReskinSampleContentSlide();
+      if(reskinSlide) return reskinSlide;
+    }
     const n = getPhotosPerSlide();
     const sample = getSamplePhotosForPreview(n).slice(0,n);
     while(sample.length < n) sample.push(null);
