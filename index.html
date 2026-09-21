@@ -3009,7 +3009,19 @@ async function drawSlide(slide, design, skippedOut){
       if(!img) continue;
       const box = slots[i];
       const bx = box.x*IN, by = box.y*IN, bw = box.w*IN, bh = box.h*IN;
-      const scale = Math.min(bw/img.width, bh/img.height);
+      let scale;
+      if(slide.reskin){
+        scale = Math.min(bw/img.width, bh/img.height);
+      } else {
+        // Fotos nuevas de auditoría: se ajustan al ancho de su columna y
+        // conservan su altura natural (no se estiran para igualar a la de
+        // al lado). Un tope evita que una foto muy alargada invada el
+        // título o el pie de página; de todas formas quedan centradas
+        // sobre la misma línea que sus vecinas.
+        scale = bw/img.width;
+        const maxH = bh*1.25;
+        if(img.height*scale > maxH) scale = maxH/img.height;
+      }
       const dw = img.width*scale, dh = img.height*scale;
       const dx = bx + (bw-dw)/2, dy = by + (bh-dh)/2;
       ctx.drawImage(img, dx, dy, dw, dh);
@@ -3234,7 +3246,26 @@ async function buildPptxFile(slideModel, filename, onProgress){
         }
         if(dataURL){
           const box = slots[i];
-          s.addImage({data:dataURL, x:box.x, y:box.y, w:box.w, h:box.h, sizing:{type:'contain', w:box.w, h:box.h}});
+          if(slide.reskin){
+            s.addImage({data:dataURL, x:box.x, y:box.y, w:box.w, h:box.h, sizing:{type:'contain', w:box.w, h:box.h}});
+          } else {
+            const dims = await new Promise(res=>{
+              const im = new Image();
+              im.onload = ()=>res({width:im.naturalWidth, height:im.naturalHeight});
+              im.onerror = ()=>res(null);
+              im.src = dataURL;
+            });
+            if(dims && dims.width && dims.height){
+              let scale = box.w/dims.width;
+              const maxH = box.h*1.25;
+              if(dims.height*scale > maxH) scale = maxH/dims.height;
+              const dw = dims.width*scale, dh = dims.height*scale;
+              const dx = box.x + (box.w-dw)/2, dy = box.y + (box.h-dh)/2;
+              s.addImage({data:dataURL, x:dx, y:dy, w:dw, h:dh});
+            } else {
+              s.addImage({data:dataURL, x:box.x, y:box.y, w:box.w, h:box.h, sizing:{type:'contain', w:box.w, h:box.h}});
+            }
+          }
           if(slide.showDate && p.label){
             const dcfg = dateSlots[i];
             s.addText(p.label, {
@@ -3555,7 +3586,8 @@ async function extractContentSlidesFromPptx(file, onProgress){
           title: i===0 ? slideTitle : '', // el título real (si existía) se conserva solo en la primera sub-diapositiva
           footer:'',
           showDate: groupHasLabel, // reutiliza el slot de etiqueta bajo cada foto para las leyendas originales
-          photos: group
+          photos: group,
+          reskin: true // en reformateo mantenemos el ajuste uniforme al recuadro (confirmado por el usuario)
         });
       }
     } else if(textBoxes.length){
