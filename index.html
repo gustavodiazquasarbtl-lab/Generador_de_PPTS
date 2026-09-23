@@ -2839,8 +2839,13 @@ function buildSlideModel(){
 
   function pushContentSlides(photos, headerText, footerText){
     for(let i=0;i<photos.length;i+=perSlide){
-      const group = [];
-      for(let j=0;j<perSlide;j++) group.push(photos[i+j] || null);
+      // Solo se toman las fotos que realmente hay en este tramo (sin rellenar
+      // con espacios vacíos). Así, cuando la última diapositiva de un grupo
+      // tiene menos fotos que "Fotos por diapositiva" (ej. eliges 4 pero
+      // sobran 2), esa diapositiva usa automáticamente la plantilla centrada
+      // para esa cantidad en vez de quedar con las fotos pegadas a la
+      // izquierda y espacio vacío a la derecha.
+      const group = photos.slice(i, i+perSlide);
       slides.push({
         type:'content',
         title: titleMode==='none' ? '' : headerText,
