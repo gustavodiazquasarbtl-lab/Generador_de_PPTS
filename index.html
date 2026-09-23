@@ -2214,7 +2214,7 @@ function onTitleModeChange(){
   const checked = document.querySelector('input[name=titleMode]:checked');
   const val = checked ? checked.value : 'none';
   const autoBlock = document.getElementById('autoElementBlock');
-  if(autoBlock) autoBlock.style.display = (state.mode==='auto' && val==='elementos') ? 'block' : 'none';
+  if(autoBlock) autoBlock.style.display = ((state.mode==='auto' || state.mode==='tiendas') && val==='elementos') ? 'block' : 'none';
 }
 
 /* ===================== UPLOAD AREA BUILD (non-destructive) ===================== */
@@ -2855,11 +2855,14 @@ function buildSlideModel(){
   if(state.mode === 'flat'){
     pushContentSlides(state.photos, '', '');
   } else if(state.mode === 'tiendas'){
+    const tiendasElNameEl = document.getElementById('autoElementName');
+    const tiendasElName = tiendasElNameEl ? tiendasElNameEl.value.trim() : '';
     state.tiendas.forEach(t=>{
       const photos = state.buckets[bucketKey(t,null)] || [];
       if(photos.length===0) return;
       if(addStoreDivider) slides.push({type:'store', tienda:t, elementos:null});
-      pushContentSlides(photos, titleMode==='tiendas' ? t : '', t);
+      const headerTxt = titleMode==='tiendas' ? t : (titleMode==='elementos' ? tiendasElName : '');
+      pushContentSlides(photos, headerTxt, t);
     });
   } else if(state.mode === 'elementos'){
     state.elementos.forEach(e=>{
@@ -3009,22 +3012,33 @@ async function drawSlide(slide, design, skippedOut){
       if(!img) continue;
       const box = slots[i];
       const bx = box.x*IN, by = box.y*IN, bw = box.w*IN, bh = box.h*IN;
-      let scale;
       if(slide.reskin){
-        scale = Math.min(bw/img.width, bh/img.height);
+        // "cover": todas las fotos llenan exactamente el mismo recuadro
+        // (incluida la primera), en vez de "contain" que dejaba unas más
+        // chicas que otras según su relación de aspecto. El sobrante se
+        // recorta con un clip, centrado.
+        const scale = Math.max(bw/img.width, bh/img.height);
+        const dw = img.width*scale, dh = img.height*scale;
+        const dx = bx + (bw-dw)/2, dy = by + (bh-dh)/2;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(bx, by, bw, bh);
+        ctx.clip();
+        ctx.drawImage(img, dx, dy, dw, dh);
+        ctx.restore();
       } else {
         // Fotos nuevas de auditoría: se ajustan al ancho de su columna y
         // conservan su altura natural (no se estiran para igualar a la de
         // al lado). Un tope evita que una foto muy alargada invada el
         // título o el pie de página; de todas formas quedan centradas
         // sobre la misma línea que sus vecinas.
-        scale = bw/img.width;
+        let scale = bw/img.width;
         const maxH = bh*1.25;
         if(img.height*scale > maxH) scale = maxH/img.height;
+        const dw = img.width*scale, dh = img.height*scale;
+        const dx = bx + (bw-dw)/2, dy = by + (bh-dh)/2;
+        ctx.drawImage(img, dx, dy, dw, dh);
       }
-      const dw = img.width*scale, dh = img.height*scale;
-      const dx = bx + (bw-dw)/2, dy = by + (bh-dh)/2;
-      ctx.drawImage(img, dx, dy, dw, dh);
       if(slide.showDate && p.label){
         const dcfg = dateSlots[i];
         ctx.fillStyle = '#' + (dcfg.color || theme.dateColor);
@@ -3149,7 +3163,7 @@ async function previewContent(){
   const showDate = document.getElementById('showDate').checked;
   let title = '';
   if(titleMode==='elementos'){
-    if(state.mode==='auto'){
+    if(state.mode==='auto' || state.mode==='tiendas'){
       const elNameEl = document.getElementById('autoElementName');
       title = (elNameEl && elNameEl.value.trim()) || 'ELEMENTO';
     } else {
@@ -3247,7 +3261,11 @@ async function buildPptxFile(slideModel, filename, onProgress){
         if(dataURL){
           const box = slots[i];
           if(slide.reskin){
-            s.addImage({data:dataURL, x:box.x, y:box.y, w:box.w, h:box.h, sizing:{type:'contain', w:box.w, h:box.h}});
+            // "cover" en vez de "contain": todas las fotos llenan exactamente el
+            // mismo recuadro (incluida la primera), sin achicarse cuando su
+            // relación de aspecto es distinta a la de sus vecinas. El recorte
+            // sobrante queda centrado.
+            s.addImage({data:dataURL, x:box.x, y:box.y, w:box.w, h:box.h, sizing:{type:'cover', w:box.w, h:box.h}});
           } else {
             const dims = await new Promise(res=>{
               const im = new Image();
@@ -3542,21 +3560,42 @@ async function extractContentSlidesFromPptx(file, onProgress){
       const xfrmM = block.match(/<a:off x="(-?\d+)" y="(-?\d+)"\s*\/>\s*<a:ext cx="(\d+)" cy="(\d+)"\s*\/>/);
       textBoxes.push(xfrmM ? {text, x:+xfrmM[1], y:+xfrmM[2], cx:+xfrmM[3], cy:+xfrmM[4]} : {text, x:null, y:null, cx:null, cy:null});
     }
-    const labels = new Array(images.length).fill('');
+    // Cada texto se empareja con la foto más cercana horizontalmente, sin
+    // importar si está arriba o abajo de ella: así el nombre de cada tienda
+    // (normalmente arriba de su foto) se conserva junto a esa foto en vez de
+    // perderse o mezclarse en un único título compartido. Solo un texto que
+    // no calce cerca de ninguna foto (p. ej. un título general de la
+    // diapositiva) queda como "huérfano" y pasa a ser el título superior.
+    // Cada texto se empareja con la foto más cercana (combinando distancia
+    // horizontal y vertical) en vez de solo la más cercana en orden de
+    // aparición: así, cuando una diapositiva tiene un título general arriba
+    // de todo (ej. "ATE") ADEMÁS de un nombre pegado a cada foto (ej.
+    // "HERBAL", "OLD SPICE"), los nombres de foto —que están mucho más cerca
+    // de su foto— se asignan primero y el título general queda libre para
+    // convertirse en el título de la diapositiva en vez de robarle el cupo
+    // a una de las fotos.
+    const labels = new Array(images.length).fill(null);
     const usedText = new Set();
+    const candidates = [];
     textBoxes.forEach(t=>{
       if(t.x===null) return;
       const tcx = t.x + t.cx/2;
-      let bestIdx = -1, bestDist = Infinity;
       images.forEach((img,idx)=>{
-        if(img.x===null || labels[idx] || t.y < img.y) return; // title above photo, or slot taken
-        const dist = Math.abs(tcx - (img.x + img.cx/2));
-        if(dist < bestDist){ bestDist = dist; bestIdx = idx; }
+        if(img.x===null) return;
+        const hDist = Math.abs(tcx - (img.x + img.cx/2));
+        if(hDist > Math.max(img.cx * 0.6, 300000)) return; // demasiado lejos en horizontal
+        const gap = (t.y < img.y) ? (img.y - (t.y + t.cy)) : (t.y - (img.y + img.cy));
+        if(gap > Math.max(img.cy * 0.18, 400000)) return; // demasiado lejos en vertical: probablemente un título general, no una etiqueta de esta foto
+        candidates.push({t, idx, dist: hDist + Math.max(gap, 0)});
       });
-      if(bestIdx !== -1 && bestDist <= Math.max(images[bestIdx].cx * 0.6, 300000)){
-        labels[bestIdx] = t.text;
-        usedText.add(t);
-      }
+    });
+    candidates.sort((a,b)=>a.dist-b.dist);
+    candidates.forEach(c=>{
+      if(usedText.has(c.t) || labels[c.idx]) return;
+      const img = images[c.idx];
+      const position = (c.t.y!==null && c.t.y < img.y) ? 'above' : 'below';
+      labels[c.idx] = {text: c.t.text, position};
+      usedText.add(c.t);
     });
     const orphanTitle = textBoxes.find(t=>!usedText.has(t));
     const slideTitle = orphanTitle ? orphanTitle.text : '';
@@ -3573,21 +3612,27 @@ async function extractContentSlidesFromPptx(file, onProgress){
       const perSlide = Math.max(1, Math.min(images.length, 4));
       for(let i=0;i<images.length;i+=perSlide){
         const group = [];
-        let groupHasLabel = false;
+        let groupHasBelowLabel = false;
         for(let j=0;j<perSlide;j++){
           const img = images[i+j];
           if(!img){ group.push(null); continue; }
-          const label = labels[i+j] || '';
-          if(label) groupHasLabel = true;
-          group.push({dataURL:img.dataURL, label});
+          const lbl = labels[i+j];
+          const isAbove = lbl && lbl.position === 'above';
+          const isBelow = lbl && lbl.position === 'below';
+          if(isBelow) groupHasBelowLabel = true;
+          group.push({
+            dataURL: img.dataURL,
+            label: isBelow ? lbl.text : '',     // se dibuja debajo de la foto, con el formato de fecha/leyenda
+            tienda: isAbove ? lbl.text : ''      // se dibuja arriba de la foto, con el formato de nombre de tienda
+          });
         }
         results.push({
           type:'content',
           title: i===0 ? slideTitle : '', // el título real (si existía) se conserva solo en la primera sub-diapositiva
           footer:'',
-          showDate: groupHasLabel, // reutiliza el slot de etiqueta bajo cada foto para las leyendas originales
+          showDate: groupHasBelowLabel, // reutiliza el slot de etiqueta bajo cada foto para leyendas que iban debajo
           photos: group,
-          reskin: true // en reformateo mantenemos el ajuste uniforme al recuadro (confirmado por el usuario)
+          reskin: true // en reformateo mantenemos el mismo tamaño de recuadro para todas las fotos
         });
       }
     } else if(textBoxes.length){
