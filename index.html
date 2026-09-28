@@ -1143,9 +1143,16 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       <input type="text" id="autoElementName" placeholder="Ej: EXHIBIDOR CABECERA" style="width:100%; padding:9px 12px; border:1px solid #d0d5dd; border-radius:8px; font-size:14px;">
     </div>
 
-    <div class="checkbox-line" style="margin-top:16px;">
-      <input type="checkbox" id="showDate">
-      <div><div class="lbl">Agregar subtítulo con la fecha</div><div class="sub">Se extrae del nombre de cada foto (ej. IMG-20260626-WA0016.jpg → 26/06)</div></div>
+    <div id="showDateBlock" style="display:none;">
+      <div class="checkbox-line" style="margin-top:16px;">
+        <input type="checkbox" id="showDate" onchange="onShowDateChange()">
+        <div><div class="lbl">Agregar subtítulo con la fecha</div><div class="sub">Se extrae del nombre de cada foto (ej. colgate_palmolive-whitening-pvea_breña-23608-A-20260911-083956 → 11/09 u 11/09/2026 08:39)</div></div>
+      </div>
+      <div id="dateFormatBlock" class="indent-block" style="display:none; margin-top:10px;">
+        <label class="field-label">Formato de la fecha (va centrado debajo de cada foto)</label>
+        <label class="radio-opt"><input type="radio" name="dateFormat" value="short" checked> Corto: 16/09</label>
+        <label class="radio-opt"><input type="radio" name="dateFormat" value="full"> Completo: 16/09/2026 14:52</label>
+      </div>
     </div>
 
     <div class="checkbox-line" style="margin-top:16px;">
@@ -1542,10 +1549,16 @@ function parseFilenameMeta(filename){
   }
   return {date:null, seq:null};
 }
-function dateLabel(date){
+function dateLabel(date, format){
   if(!date) return '';
   const dd = String(date.getDate()).padStart(2,'0');
   const mm = String(date.getMonth()+1).padStart(2,'0');
+  if(format === 'full'){
+    const yyyy = date.getFullYear();
+    const hh = String(date.getHours()).padStart(2,'0');
+    const mi = String(date.getMinutes()).padStart(2,'0');
+    return dd + '/' + mm + '/' + yyyy + ' ' + hh + ':' + mi;
+  }
   return dd + '/' + mm;
 }
 /* Extrae el nombre de tienda de nombres de archivo con el patron:
@@ -2122,6 +2135,7 @@ function exportConfig(){
     pptTitle: document.getElementById('pptTitle').value,
     titleMode: document.querySelector('input[name=titleMode]:checked').value,
     showDate: document.getElementById('showDate').checked,
+    dateFormat: getDateFormat(),
     splitEvery45: document.getElementById('splitEvery45').checked
   };
   downloadBlob(new Blob([JSON.stringify(cfg, null, 2)], {type:'application/json'}), 'configuracion_quasar_ppt.json');
@@ -2146,6 +2160,11 @@ function handleConfigFile(inputEl){
         if(r) r.checked = true;
       }
       if(typeof cfg.showDate === 'boolean') document.getElementById('showDate').checked = cfg.showDate;
+      if(cfg.dateFormat){
+        const dfr = document.querySelector('input[name=dateFormat][value="'+cfg.dateFormat+'"]');
+        if(dfr) dfr.checked = true;
+      }
+      onShowDateChange();
       if(cfg.photosPerSlide) setPhotosPerSlide(cfg.photosPerSlide);
       if(typeof cfg.splitEvery45 === 'boolean') document.getElementById('splitEvery45').checked = cfg.splitEvery45;
       document.getElementById('useTiendas').checked = !!cfg.useTiendas;
@@ -2182,6 +2201,17 @@ function onOrgChange(sourceEl){
   const useA = autoCb.checked;
   document.getElementById('tiendasBlock').style.display = useT ? 'block' : 'none';
   document.getElementById('elementosBlock').style.display = useE ? 'block' : 'none';
+  // El subtítulo con la fecha solo tiene sentido en "Organizar por Tiendas/Elementos",
+  // que es el único modo que detecta la fecha automáticamente desde el nombre de
+  // cada foto; en los demás modos se oculta y se apaga para que no quede activo
+  // sin que se vea el control.
+  const showDateBlock = document.getElementById('showDateBlock');
+  if(showDateBlock) showDateBlock.style.display = useA ? 'block' : 'none';
+  if(!useA){
+    const showDateCb = document.getElementById('showDate');
+    if(showDateCb) showDateCb.checked = false;
+  }
+  onShowDateChange();
   if(useT && useE) state.mode = 'both';
   else if(useT) state.mode = 'tiendas';
   else if(useE) state.mode = 'elementos';
@@ -2215,6 +2245,25 @@ function onTitleModeChange(){
   const val = checked ? checked.value : 'none';
   const autoBlock = document.getElementById('autoElementBlock');
   if(autoBlock) autoBlock.style.display = ((state.mode==='auto' || state.mode==='tiendas') && val==='elementos') ? 'block' : 'none';
+}
+function onShowDateChange(){
+  const block = document.getElementById('dateFormatBlock');
+  const on = document.getElementById('showDate').checked;
+  if(block) block.style.display = on ? 'block' : 'none';
+}
+function getDateFormat(){
+  const r = document.querySelector('input[name=dateFormat]:checked');
+  return r ? r.value : 'short';
+}
+/* Recalcula la etiqueta de fecha a partir de la fecha real guardada en la foto
+   (p.date), usando el formato elegido en ese momento, en vez de depender del
+   texto fijo que se generó al subir la foto. Así, cambiar el formato después
+   de subir las fotos sí actualiza lo que se ve. Si la foto no trae fecha
+   (p.ej. una leyenda propia de "Aplicar formato existente"), se usa p.label
+   tal cual, sin modificarlo. */
+function getDateLabelFor(p){
+  if(p && p.date) return dateLabel(p.date, getDateFormat());
+  return (p && p.label) || '';
 }
 
 /* ===================== UPLOAD AREA BUILD (non-destructive) ===================== */
@@ -3049,7 +3098,7 @@ async function drawSlide(slide, design, skippedOut){
         ctx.fillStyle = '#' + (dcfg.color || theme.dateColor);
         ctx.font = '400 ' + (dcfg.fontSize*1.25) + 'px ' + dcfg.fontFamily + ', sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(p.label, (dcfg.x+dcfg.w/2)*IN, dcfg.y*IN + dcfg.fontSize*1.2);
+        ctx.fillText(getDateLabelFor(p), (dcfg.x+dcfg.w/2)*IN, dcfg.y*IN + dcfg.fontSize*1.2);
       }
       if(p.tienda && layout.storeLabels){
         const scfg = layout.storeLabels[i];
@@ -3291,7 +3340,7 @@ async function buildPptxFile(slideModel, filename, onProgress){
           }
           if(slide.showDate && p.label){
             const dcfg = dateSlots[i];
-            s.addText(p.label, {
+            s.addText(getDateLabelFor(p), {
               x:dcfg.x, y:dcfg.y, w:dcfg.w, h:dcfg.h,
               fontSize:dcfg.fontSize, fontFace:dcfg.fontFamily, color:(dcfg.color||theme.dateColor), align:'center'
             });
