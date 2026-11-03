@@ -1070,6 +1070,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       <button class="btn ghost" onclick="previewContent()">Vista previa de contenido</button>
       <button class="btn ghost" onclick="openLayoutEditor()"><svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 1 1 0-18c4 0 8 2.5 8 6.5 0 2-1.5 3.5-3.5 3.5H15a1.5 1.5 0 0 0-1 2.6c.4.4.6.9.6 1.4 0 1.1-1 2-2.6 2z"/><circle cx="7.5" cy="10.5" r="1" fill="currentColor" stroke="none"/><circle cx="10.5" cy="7" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="7.5" r="1" fill="currentColor" stroke="none"/></svg> Personalizar posiciones y letras</button>
       <button class="btn primary" id="btnReskinGenerate" onclick="generateReskin('both')" disabled>Aplicar formato y descargar (PPTX + PDF)</button>
+      <button class="btn ghost" id="btnReskinPause" onclick="toggleGenPause('existente')" disabled>Pausar</button>
+      <button class="btn ghost" id="btnReskinRegen" onclick="regenerate('existente')">Regenerar</button>
     </div>
 
     <div class="progress-wrap" id="reskinProgressWrap" style="display:none;">
@@ -1099,6 +1101,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         <button onclick="downloadListTemplate('tiendas')"><svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg> Descargar plantilla Excel</button>
         <button onclick="triggerListUpload('tiendas')"><svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9M7 14l5-5 5 5M5 3h14"/></svg> Subir lista desde Excel</button>
         <input type="file" id="tiendaFileInput" accept=".xlsx,.xls,.csv,.txt" style="display:none" onchange="handleListFile('tiendas', this)">
+        <button id="btnClearTiendas" onclick="clearAllTiendas()" style="color:#b42318; border-color:#f0b8b2;" disabled><svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg> Eliminar todos</button>
       </div>
       <div class="chips" id="tiendaChips"></div>
     </div>
@@ -1117,6 +1120,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         <button onclick="downloadListTemplate('elementos')"><svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg> Descargar plantilla Excel</button>
         <button onclick="triggerListUpload('elementos')"><svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9M7 14l5-5 5 5M5 3h14"/></svg> Subir lista desde Excel</button>
         <input type="file" id="elementoFileInput" accept=".xlsx,.xls,.csv,.txt" style="display:none" onchange="handleListFile('elementos', this)">
+        <button id="btnClearElementos" onclick="clearAllElementos()" style="color:#b42318; border-color:#f0b8b2;" disabled><svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg> Eliminar todos</button>
       </div>
       <div class="chips" id="elementoChips"></div>
     </div>
@@ -1189,6 +1193,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       <button class="btn ghost" onclick="previewContent()">Vista previa de contenido</button>
       <button class="btn ghost" onclick="openLayoutEditor()"><svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 1 1 0-18c4 0 8 2.5 8 6.5 0 2-1.5 3.5-3.5 3.5H15a1.5 1.5 0 0 0-1 2.6c.4.4.6.9.6 1.4 0 1.1-1 2-2.6 2z"/><circle cx="7.5" cy="10.5" r="1" fill="currentColor" stroke="none"/><circle cx="10.5" cy="7" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="7.5" r="1" fill="currentColor" stroke="none"/></svg> Personalizar posiciones y letras</button>
       <button class="btn primary" id="btnGenerate" onclick="generateOutput('both')" disabled>Generar y descargar (PPTX + PDF)</button>
+      <button class="btn ghost" id="btnPause" onclick="toggleGenPause('nueva')" disabled>Pausar</button>
+      <button class="btn ghost" id="btnRegen" onclick="regenerate('nueva')">Regenerar</button>
     </div>
 
     <div class="progress-wrap" id="progressWrap">
@@ -1620,6 +1626,56 @@ window.addEventListener('error', function(e){
 window.addEventListener('unhandledrejection', function(e){
   try{ log('\u26A0 Error inesperado (promesa): ' + errMsg(e.reason)); }catch(_){}
 });
+/* ===== Control de generación: pausar / reanudar / regenerar (ambos flujos) ===== */
+const genCtl = {running:false, paused:false, cancelled:false, flow:null, kind:'both', donePromise:null, doneResolve:null};
+class GenCancelled extends Error{}
+function genUiUpdate(){
+  [['btnPause','btnRegen','nueva'],['btnReskinPause','btnReskinRegen','existente']].forEach(([pId,rId,flow])=>{
+    const pb = document.getElementById(pId), rb = document.getElementById(rId);
+    if(!pb || !rb) return;
+    const mine = genCtl.running && genCtl.flow===flow;
+    pb.disabled = !mine;
+    pb.textContent = (mine && genCtl.paused) ? 'Reanudar' : 'Pausar';
+    rb.disabled = genCtl.running && genCtl.flow!==flow;
+  });
+}
+function genStart(flow, kind){
+  genCtl.running = true; genCtl.paused = false; genCtl.cancelled = false;
+  genCtl.flow = flow; genCtl.kind = kind || 'both';
+  genCtl.donePromise = new Promise(r=>{ genCtl.doneResolve = r; });
+  genUiUpdate();
+}
+function genEnd(){
+  genCtl.running = false; genCtl.paused = false;
+  genUiUpdate();
+  if(genCtl.doneResolve){ genCtl.doneResolve(); genCtl.doneResolve = null; }
+}
+async function genCheckpoint(){
+  while(genCtl.paused && !genCtl.cancelled) await new Promise(r=>setTimeout(r,150));
+  if(genCtl.cancelled) throw new GenCancelled('Generación cancelada');
+}
+function toggleGenPause(flow){
+  if(!genCtl.running || genCtl.flow!==flow) return;
+  genCtl.paused = !genCtl.paused;
+  const labelEl = document.getElementById(flow==='existente' ? 'reskinProgressLabel' : 'progressLabel');
+  const tag = '\u23F8 En pausa \u2014 ';
+  if(labelEl){
+    if(genCtl.paused){ if(labelEl.textContent.indexOf(tag)!==0) labelEl.textContent = tag + labelEl.textContent; }
+    else if(labelEl.textContent.indexOf(tag)===0) labelEl.textContent = labelEl.textContent.slice(tag.length);
+  }
+  log(genCtl.paused ? 'Generación en pausa. Pulsa "Reanudar" para continuar.' : 'Generación reanudada.');
+  genUiUpdate();
+}
+async function regenerate(flow){
+  if(genCtl.running){
+    if(genCtl.flow!==flow) return;
+    log('Regenerando: se cancela el proceso actual y se reinicia desde el principio...');
+    genCtl.cancelled = true; genCtl.paused = false;
+    await genCtl.donePromise;
+  }
+  if(flow==='existente') await generateReskin(genCtl.kind || 'both');
+  else await generateOutput(genCtl.kind || 'both');
+}
 function setProgress(pct, label){
   const wrapId = state.appMode === 'existente' ? 'reskinProgressWrap' : 'progressWrap';
   const fillId = state.appMode === 'existente' ? 'reskinProgressFill' : 'progressFill';
@@ -1947,6 +2003,24 @@ function removeTienda(i){
   state.unclassified = state.unclassified.filter(u=>u.tienda!==name);
   renderChips(); rebuildUploadArea();
 }
+function clearAllTiendas(){
+  if(!state.tiendas.length) return;
+  if(!confirm('¿Eliminar las '+state.tiendas.length+' tiendas agregadas y las fotos asignadas a ellas?')) return;
+  const names = new Set(state.tiendas);
+  state.tiendas = [];
+  Object.keys(state.buckets).forEach(k=>{ if(names.has(k.split('||')[0])) delete state.buckets[k]; });
+  state.unclassified = state.unclassified.filter(u=>!names.has(u.tienda));
+  renderChips(); rebuildUploadArea(); updateSummary();
+}
+function clearAllElementos(){
+  if(!state.elementos.length) return;
+  if(!confirm('¿Eliminar los '+state.elementos.length+' elementos agregados y las fotos asignadas a ellos?')) return;
+  const names = new Set(state.elementos);
+  state.elementos = [];
+  Object.keys(state.buckets).forEach(k=>{ if(names.has(k.split('||')[1])) delete state.buckets[k]; });
+  state.unclassified = state.unclassified.filter(u=>!names.has(u.elemento));
+  renderChips(); rebuildUploadArea(); updateSummary();
+}
 function removeElemento(i){
   const name = state.elementos[i];
   state.elementos.splice(i,1);
@@ -2014,6 +2088,8 @@ function editElemento(i, newVal){
 function renderChips(){
   renderChipList('tiendaChips', state.tiendas, editTienda, removeTienda);
   renderChipList('elementoChips', state.elementos, editElemento, removeElemento);
+  const bct = document.getElementById('btnClearTiendas'); if(bct) bct.disabled = state.tiendas.length===0;
+  const bce = document.getElementById('btnClearElementos'); if(bce) bce.disabled = state.elementos.length===0;
 }
 function renderChipList(containerId, list, onEdit, onRemove){
   const c = document.getElementById(containerId);
@@ -2227,7 +2303,8 @@ function updateTitleModeAvailability(){
   const tiendaRadio = document.querySelector('input[name=titleMode][value=tiendas]');
   if(!tiendaRadio) return;
   const lbl = tiendaRadio.closest('label');
-  if(state.mode === 'auto'){
+  const autoHasStores = state.mode === 'auto' && state.photos.some(p=>p.tienda);
+  if(state.mode === 'auto' && !autoHasStores){
     tiendaRadio.disabled = true;
     if(lbl) lbl.style.opacity = '0.45';
     if(tiendaRadio.checked){
@@ -2834,10 +2911,26 @@ function totalPhotoCount(){
   return Object.values(state.buckets).reduce((s,arr)=>s+arr.length,0);
 }
 function updateSummary(){
+  if(typeof updateTitleModeAvailability === 'function') updateTitleModeAvailability();
   const n = totalPhotoCount();
   document.getElementById('summaryLine').textContent =
     n>0 ? (n + ' fotos listas · ~' + estimateSlideCount() + ' diapositivas estimadas') : 'Sin fotos cargadas todavía.';
   document.getElementById('btnGenerate').disabled = n===0;
+}
+function groupPhotosByTienda(photos){
+  const map = new Map();
+  photos.forEach(p=>{
+    const k = p.tienda || '';
+    if(!map.has(k)) map.set(k, []);
+    map.get(k).push(p);
+  });
+  const keys = Array.from(map.keys()).sort((a,b)=>{
+    if(!a) return 1; if(!b) return -1;
+    return a.localeCompare(b,'es');
+  });
+  const out = new Map();
+  keys.forEach(k=>out.set(k, map.get(k)));
+  return out;
 }
 function estimateSlideCount(){
   const perSlide = getPhotosPerSlide();
@@ -2845,7 +2938,13 @@ function estimateSlideCount(){
   if(state.mode==='flat'){
     contentSlides = Math.ceil(state.photos.length/perSlide);
   } else if(state.mode==='auto'){
-    contentSlides = Math.ceil(state.photos.length/perSlide);
+    const tm = document.querySelector('input[name=titleMode]:checked');
+    if(tm && tm.value==='tiendas'){
+      const g = groupPhotosByTienda(state.photos);
+      g.forEach(arr=>{ contentSlides += Math.ceil(arr.length/perSlide); });
+    } else {
+      contentSlides = Math.ceil(state.photos.length/perSlide);
+    }
     const addDiv = document.getElementById('addStoreDivider');
     if(addDiv && addDiv.checked){
       const tiendaSet = new Set();
@@ -2886,7 +2985,7 @@ function buildSlideModel(){
 
   slides.push({type:'cover', lines: pptTitleLines});
 
-  function pushContentSlides(photos, headerText, footerText){
+  function pushContentSlides(photos, headerText, footerText, hideStoreLabels){
     for(let i=0;i<photos.length;i+=perSlide){
       // Solo se toman las fotos que realmente hay en este tramo (sin rellenar
       // con espacios vacíos). Así, cuando la última diapositiva de un grupo
@@ -2894,7 +2993,8 @@ function buildSlideModel(){
       // sobran 2), esa diapositiva usa automáticamente la plantilla centrada
       // para esa cantidad en vez de quedar con las fotos pegadas a la
       // izquierda y espacio vacío a la derecha.
-      const group = photos.slice(i, i+perSlide);
+      let group = photos.slice(i, i+perSlide);
+      if(hideStoreLabels) group = group.map(p=>Object.assign({}, p, {tienda:''}));
       slides.push({
         type:'content',
         title: titleMode==='none' ? '' : headerText,
@@ -2944,8 +3044,18 @@ function buildSlideModel(){
     }
     const elNameEl = document.getElementById('autoElementName');
     const elName = elNameEl ? elNameEl.value.trim() : '';
-    const headerTxt = titleMode==='elementos' ? elName : '';
-    pushContentSlides(state.photos, headerTxt, '');
+    if(titleMode==='tiendas'){
+      // Cada tienda detectada en el nombre de las fotos tiene sus propias
+      // diapositivas: el título es la tienda y solo se agrupan fotos de la
+      // misma tienda (si hay 1 foto por tienda, sale 1 foto centrada por
+      // diapositiva sin importar las "fotos por diapositiva" elegidas).
+      groupPhotosByTienda(state.photos).forEach((arr, tienda)=>{
+        pushContentSlides(arr, tienda, '', true);
+      });
+    } else {
+      const headerTxt = titleMode==='elementos' ? elName : '';
+      pushContentSlides(state.photos, headerTxt, '');
+    }
   }
 
   slides.push({type:'gracias'});
@@ -3224,7 +3334,13 @@ async function previewContent(){
       title = state.elementos[0] || 'ELEMENTO';
     }
   }
-  else if(titleMode==='tiendas') title = state.tiendas[0] || 'TIENDA';
+  else if(titleMode==='tiendas'){
+    if(state.mode==='auto'){
+      const sp = sample.find(p=>p && p.tienda);
+      title = sp ? sp.tienda : 'TIENDA';
+      for(let i=0;i<sample.length;i++){ if(sample[i]) sample[i] = Object.assign({}, sample[i], {tienda:''}); }
+    } else title = state.tiendas[0] || 'TIENDA';
+  }
   const footer = state.tiendas.length ? state.tiendas[0] : '';
   const slide = {type:'content', title, footer, showDate, photos: sample, auto: state.mode === 'auto'};
   setProgress(0, 'Generando vista previa...');
@@ -3246,6 +3362,7 @@ async function buildPptxFile(slideModel, filename, onProgress){
   let done = 0;
 
   for(const slide of slideModel){
+    await genCheckpoint();
     const s = pptx.addSlide();
     if(slide.type === 'cover'){
       const cfg = LAYOUT.coverTitle;
@@ -3418,6 +3535,7 @@ async function buildPdfFile(slideModel, filename, onProgress){
   const doc = new jsPDF({orientation:'landscape', unit:'in', format:[SLIDE_W, SLIDE_H]});
   const skipped = [];
   for(let i=0;i<slideModel.length;i++){
+    await genCheckpoint();
     const canvas = await drawSlide(slideModel[i], state.design, skipped);
     const dataURL = canvas.toDataURL('image/jpeg', 0.85);
     if(i>0) doc.addPage([SLIDE_W, SLIDE_H], 'landscape');
@@ -3452,8 +3570,11 @@ function chunkSlides(slideModel, size){
 }
 
 async function generateOutput(kind){
+  if(genCtl.running) return;
+  if(totalPhotoCount()===0){ alert('Primero sube algunas fotos.'); return; }
   const btn = document.getElementById('btnGenerate');
   btn.disabled = true;
+  genStart('nueva', kind);
   try{
     const kinds = kind==='both' ? ['pptx','pdf'] : [kind];
     const slideModel = buildSlideModel();
@@ -3478,6 +3599,7 @@ async function generateOutput(kind){
       const suffix = groups.length>1 ? ('_Parte' + (i+1)) : '';
       const partLabel = groups.length>1 ? (' (parte '+(i+1)+'/'+groups.length+')') : '';
       for(const k of kinds){
+        await genCheckpoint();
         let skipped;
         if(k==='pptx'){
           skipped = await buildPptxFile(groups[i], baseTitle + suffix + '.pptx', (done,total)=>{
@@ -3509,12 +3631,18 @@ async function generateOutput(kind){
     }
     setTimeout(hideProgress, 1500);
   } catch(err){
-    const msg = errMsg(err);
-    console.error(err);
-    log('Error: ' + msg);
-    alert('Ocurrió un error generando el archivo: ' + msg + '\n\nRevisa el registro de actividad para más detalles.');
+    if(err instanceof GenCancelled){
+      hideProgress();
+      log('Generación cancelada.');
+    } else {
+      const msg = errMsg(err);
+      console.error(err);
+      log('Error: ' + msg);
+      alert('Ocurrió un error generando el archivo: ' + msg + '\n\nRevisa el registro de actividad para más detalles.');
+    }
   } finally {
     btn.disabled = false;
+    genEnd();
   }
 }
 
@@ -3747,8 +3875,10 @@ function onReskinTitleModeChange(){
 
 async function generateReskin(kind){
   if(!reskinSlideModel || reskinSlideModel.length===0){ alert('Primero sube un PPT válido con contenido.'); return; }
+  if(genCtl.running) return;
   const btn = document.getElementById('btnReskinGenerate');
   btn.disabled = true;
+  genStart('existente', kind);
   try{
     let model = reskinSlideModel.slice();
     const useElementTitle = document.getElementById('reskinUseElementTitle').checked;
@@ -3770,6 +3900,7 @@ async function generateReskin(kind){
       const suffix = groups.length>1 ? ('_Parte' + (i+1)) : '';
       const partLabel = groups.length>1 ? (' (parte '+(i+1)+'/'+groups.length+')') : '';
       for(const k of kinds){
+        await genCheckpoint();
         if(k==='pptx'){
           await buildPptxFile(groups[i], baseTitle+suffix+'.pptx', (done,total)=>{
             setProgress(Math.round((stepDone+(total?done/total:1))/totalSteps*100), 'Generando PPTX'+partLabel+'... ('+done+'/'+total+' fotos)');
@@ -3791,12 +3922,18 @@ async function generateReskin(kind){
     setProgress(100, 'Listo.');
     setTimeout(hideProgress, 800);
   }catch(err){
-    const msg = errMsg(err);
-    alert('Ocurrió un error aplicando el formato: ' + msg);
-    log('Error aplicando formato: ' + msg);
-    hideProgress();
+    if(err instanceof GenCancelled){
+      hideProgress();
+      log('Proceso cancelado.');
+    } else {
+      const msg = errMsg(err);
+      alert('Ocurrió un error aplicando el formato: ' + msg);
+      log('Error aplicando formato: ' + msg);
+      hideProgress();
+    }
   }finally{
     btn.disabled = false;
+    genEnd();
   }
 }
 
