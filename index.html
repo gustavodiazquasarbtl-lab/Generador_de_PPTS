@@ -978,6 +978,22 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   .upv-next{right:18px;top:50%;transform:translateY(-50%);}
   .upv-close{right:18px;top:18px;}
   .upv-cap{position:absolute;bottom:16px;left:0;right:0;text-align:center;color:#e5e7eb;font-size:13px;}
+
+  .upm-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:10px 12px;border:1px dashed #c7d0e0;border-radius:10px;background:#f8faff;margin-bottom:10px;}
+  .upm-lbl{font-weight:700;font-size:13px;}
+  .upm-sub{font-size:12px;color:#667085;margin-top:2px;}
+  .upm-sels{display:flex;gap:8px;flex-wrap:wrap;}
+  .upm-sel{padding:7px 10px;border:1px solid #d0d5dd;border-radius:8px;font-size:13px;max-width:200px;background:#fff;}
+  .upm-row > div:first-child{flex:1 1 240px;min-width:0;}
+  .upm-filters{background:#fff;border-style:solid;border-color:#e5e7eb;}
+  .upm-sec{border:1px solid #e5e7eb;border-radius:10px;margin-bottom:8px;overflow:hidden;}
+  .upm-sec-sub{margin:8px 0 0 14px;}
+  .upm-sec-h{display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:pointer;background:#f8fafc;}
+  .upm-sec-h:hover{background:#eef2f9;}
+  .upm-sec-name{font-weight:700;font-size:13px;flex:1;}
+  .upm-chev{display:inline-flex;transition:transform .15s;}
+  .upm-sec-h.open .upm-chev{transform:rotate(90deg);}
+  .upm-sec-b{padding:10px 12px 12px;}
 </style>
 </head>
 <body>
@@ -1437,66 +1453,66 @@ const DEFAULT_LAYOUT = {
   photos: {
     1: {
       slots: [
-        {x:4.767, y:1.55, w:3.8, h:4.6}
+        {x:4.767, y:1.92, w:3.8, h:4.23}
       ],
       dates: [
         {x:4.767, y:6.2, w:3.8, h:0.34, fontSize:12, fontFamily:'Arial', color:null}
       ],
       storeLabels: [
-        {x:4.767, y:1.18, w:3.8, h:0.32, fontSize:14, fontFamily:'Arial', color:null}
+        {x:4.767, y:1.52, w:3.8, h:0.32, fontSize:14, fontFamily:'Arial', color:null}
       ]
     },
     2: {
       slots: [
-        {x:3.055, y:1.75, w:3.333, h:4.35},
-        {x:6.944, y:1.75, w:3.333, h:4.35}
+        {x:3.055, y:1.92, w:3.333, h:4.23},
+        {x:6.944, y:1.92, w:3.333, h:4.23}
       ],
       dates: [
-        {x:3.055, y:6.15, w:3.333, h:0.34, fontSize:12, fontFamily:'Arial', color:null},
-        {x:6.944, y:6.15, w:3.333, h:0.34, fontSize:12, fontFamily:'Arial', color:null}
+        {x:3.055, y:6.2, w:3.333, h:0.34, fontSize:12, fontFamily:'Arial', color:null},
+        {x:6.944, y:6.2, w:3.333, h:0.34, fontSize:12, fontFamily:'Arial', color:null}
       ],
       storeLabels: [
-        {x:3.055, y:1.38, w:3.333, h:0.32, fontSize:14, fontFamily:'Arial', color:null},
-        {x:6.944, y:1.38, w:3.333, h:0.32, fontSize:14, fontFamily:'Arial', color:null}
+        {x:3.055, y:1.52, w:3.333, h:0.32, fontSize:14, fontFamily:'Arial', color:null},
+        {x:6.944, y:1.52, w:3.333, h:0.32, fontSize:14, fontFamily:'Arial', color:null}
       ]
     },
     3: {
       slots: [
-        {x:1.000, y:1.75, w:3.578, h:4.35},
-        {x:4.878, y:1.75, w:3.578, h:4.35},
-        {x:8.756, y:1.75, w:3.578, h:4.35}
+        {x:1.000, y:1.92, w:3.578, h:4.23},
+        {x:4.878, y:1.92, w:3.578, h:4.23},
+        {x:8.756, y:1.92, w:3.578, h:4.23}
       ],
       dates: [
-        {x:1.000, y:6.15, w:3.578, h:0.34, fontSize:12, fontFamily:'Arial', color:null},
-        {x:4.878, y:6.15, w:3.578, h:0.34, fontSize:12, fontFamily:'Arial', color:null},
-        {x:8.756, y:6.15, w:3.578, h:0.34, fontSize:12, fontFamily:'Arial', color:null}
+        {x:1.000, y:6.2, w:3.578, h:0.34, fontSize:12, fontFamily:'Arial', color:null},
+        {x:4.878, y:6.2, w:3.578, h:0.34, fontSize:12, fontFamily:'Arial', color:null},
+        {x:8.756, y:6.2, w:3.578, h:0.34, fontSize:12, fontFamily:'Arial', color:null}
       ],
       storeLabels: [
-        {x:1.000, y:1.38, w:3.578, h:0.32, fontSize:14, fontFamily:'Arial', color:null},
-        {x:4.878, y:1.38, w:3.578, h:0.32, fontSize:14, fontFamily:'Arial', color:null},
-        {x:8.756, y:1.38, w:3.578, h:0.32, fontSize:14, fontFamily:'Arial', color:null}
+        {x:1.000, y:1.52, w:3.578, h:0.32, fontSize:14, fontFamily:'Arial', color:null},
+        {x:4.878, y:1.52, w:3.578, h:0.32, fontSize:14, fontFamily:'Arial', color:null},
+        {x:8.756, y:1.52, w:3.578, h:0.32, fontSize:14, fontFamily:'Arial', color:null}
       ]
     },
     4: {
       // Grilla 2x2 de fotos cuadradas (en vez de una sola fila) para que quepan
       // 4 fotos sin estirarlas ni achicarlas demasiado.
       slots: [
-        {x:4.317, y:1.60, w:2.2, h:2.2},
-        {x:6.817, y:1.60, w:2.2, h:2.2},
-        {x:4.317, y:4.25, w:2.2, h:2.2},
-        {x:6.817, y:4.25, w:2.2, h:2.2}
+        {x:4.317, y:1.88, w:2.0, h:2.0},
+        {x:6.817, y:1.88, w:2.0, h:2.0},
+        {x:4.317, y:4.62, w:2.0, h:2.0},
+        {x:6.817, y:4.62, w:2.0, h:2.0}
       ],
       dates: [
-        {x:4.317, y:3.80, w:2.2, h:0.3, fontSize:12, fontFamily:'Arial', color:null},
-        {x:6.817, y:3.80, w:2.2, h:0.3, fontSize:12, fontFamily:'Arial', color:null},
-        {x:4.317, y:6.45, w:2.2, h:0.3, fontSize:12, fontFamily:'Arial', color:null},
-        {x:6.817, y:6.45, w:2.2, h:0.3, fontSize:12, fontFamily:'Arial', color:null}
+        {x:4.317, y:3.90, w:2.0, h:0.3, fontSize:12, fontFamily:'Arial', color:null},
+        {x:6.817, y:3.90, w:2.0, h:0.3, fontSize:12, fontFamily:'Arial', color:null},
+        {x:4.317, y:6.64, w:2.0, h:0.3, fontSize:12, fontFamily:'Arial', color:null},
+        {x:6.817, y:6.64, w:2.0, h:0.3, fontSize:12, fontFamily:'Arial', color:null}
       ],
       storeLabels: [
-        {x:4.317, y:1.25, w:2.2, h:0.3, fontSize:14, fontFamily:'Arial', color:null},
-        {x:6.817, y:1.25, w:2.2, h:0.3, fontSize:14, fontFamily:'Arial', color:null},
-        {x:4.317, y:3.90, w:2.2, h:0.3, fontSize:14, fontFamily:'Arial', color:null},
-        {x:6.817, y:3.90, w:2.2, h:0.3, fontSize:14, fontFamily:'Arial', color:null}
+        {x:4.317, y:1.52, w:2.0, h:0.3, fontSize:14, fontFamily:'Arial', color:null},
+        {x:6.817, y:1.52, w:2.0, h:0.3, fontSize:14, fontFamily:'Arial', color:null},
+        {x:4.317, y:4.26, w:2.0, h:0.3, fontSize:14, fontFamily:'Arial', color:null},
+        {x:6.817, y:4.26, w:2.0, h:0.3, fontSize:14, fontFamily:'Arial', color:null}
       ]
     }
   }
@@ -1523,6 +1539,16 @@ const AUTO_PHOTOS_4 = {
     {x:9.64, y:1.73, w:2.75, h:0.32, fontSize:14, fontFamily:'Arial', color:null}
   ]
 };
+/* Cuando la diapositiva no lleva fecha bajo cada foto ni pie de página, las
+   fotos pueden usar el espacio de abajo (hasta ~7.1" o ~6.75" si hay pie).
+   La parte de arriba NO se mueve: siempre queda debajo del nombre de tienda,
+   que a su vez queda debajo de la franja azul del diseño. */
+function getSlideSlots(slide, layout){
+  const slots = layout.slots;
+  if(slide.reskin || slots.length > 3 || slide.showDate) return slots;
+  const bottom = slide.footer ? 6.75 : 7.1;
+  return slots.map(sl => Object.assign({}, sl, {h: Math.max(sl.h, bottom - sl.y)}));
+}
 function getContentLayout(slide, n){
   if(slide.auto && n===4) return AUTO_PHOTOS_4;
   return LAYOUT.photos[n] || LAYOUT.photos[2];
@@ -2392,6 +2418,7 @@ function rebuildUploadArea(){
       renderUnclassified(); renderInvalid(); updateSummary();
       return;
     }
+    area.appendChild(buildModalLauncher());
     area.appendChild(buildGeneralFolderZone('tiendas'));
     state.tiendas.forEach(t=> area.appendChild(buildBucketUploadZone(t, null)));
   } else if(state.mode === 'elementos'){
@@ -2401,6 +2428,7 @@ function rebuildUploadArea(){
       renderUnclassified(); renderInvalid(); updateSummary();
       return;
     }
+    area.appendChild(buildModalLauncher());
     area.appendChild(buildGeneralFolderZone('elementos'));
     state.elementos.forEach(e=> area.appendChild(buildBucketUploadZone(null, e)));
   } else if(state.mode === 'both'){
@@ -2410,6 +2438,7 @@ function rebuildUploadArea(){
       renderUnclassified(); renderInvalid(); updateSummary();
       return;
     }
+    area.appendChild(buildModalLauncher());
     area.appendChild(buildGeneralFolderZone('both'));
     state.tiendas.forEach(t=> area.appendChild(buildFolderUploadZone(t)));
   } else if(state.mode === 'auto'){
@@ -2419,57 +2448,91 @@ function rebuildUploadArea(){
   renderUnclassified();
   renderInvalid();
   updateSummary();
+  if(typeof refreshUploadModal === 'function') refreshUploadModal();
 }
 
 function loadedStatusHtml(){
-  const n = state.photos.length;
+  const n = totalPhotoCount();
   if(n===0) return '<span style="color:#667085;font-size:13px;">Aún no hay fotos cargadas</span>';
   return '<div class="loaded-status"><span class="chk"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>' + n + (n===1 ? ' FOTO CARGADA' : ' FOTOS CARGADAS') + '</div>';
 }
-function buildFlatUploadZone(){
+/* Botón de la página que abre la ventana de fotos (todos los modos) */
+function buildModalLauncher(){
+  const bucketMode = !(state.mode==='flat' || state.mode==='auto');
   const wrap = document.createElement('div');
   wrap.className = 'upload-zone';
-  wrap.innerHTML = '<div class="icon">'+icon('image')+'</div><div class="title">Subir fotos o carpeta completa</div><div class="desc">Se abre una ventana para subirlas y ver las miniaturas — hasta ~500 imágenes</div>' +
-    '<div style="margin-top:10px;"><button type="button" class="btn primary" id="btnOpenUploadModal">Subir fotos</button></div>' +
+  wrap.innerHTML = '<div class="icon">'+icon('image')+'</div>' +
+    '<div class="title">' + (bucketMode ? 'Subir y ver fotos por tienda / elemento' : 'Subir fotos o carpeta completa') + '</div>' +
+    '<div class="desc">' + (bucketMode ? 'Se abre una ventana con las miniaturas organizadas por sección y filtros — hasta ~500 imágenes' : 'Se abre una ventana para subirlas y ver las miniaturas — hasta ~500 imágenes') + '</div>' +
+    '<div style="margin-top:10px;"><button type="button" class="btn primary" id="btnOpenUploadModal">' + (bucketMode ? 'Subir / ver fotos' : 'Subir fotos') + '</button></div>' +
     '<div style="margin-top:12px;display:flex;justify-content:center;">'+loadedStatusHtml()+'</div>';
   wrap.onclick = ()=> openUploadModal();
-  setupDropFilesOrFolder(wrap, async (files)=>{
-    await processFilesFlat(files);
-  });
+  if(!bucketMode){
+    setupDropFilesOrFolder(wrap, async (files)=>{ await processFilesFlat(files); });
+  }
   return wrap;
 }
+function buildFlatUploadZone(){ return buildModalLauncher(); }
 
-/* ===== Ventana emergente de carga (modo automático) ===== */
-const photoUrlCache = new WeakMap();
-function photoUrl(p){
-  let u = photoUrlCache.get(p.file);
-  if(!u){ u = URL.createObjectURL(p.file); photoUrlCache.set(p.file, u); }
+/* ===== Ventana emergente de carga y galería (todos los modos) ===== */
+const fileUrlCache = new WeakMap();
+function fileUrl(file){
+  let u = fileUrlCache.get(file);
+  if(!u){ u = URL.createObjectURL(file); fileUrlCache.set(file, u); }
   return u;
 }
+function photoUrl(p){ return fileUrl(p.file); }
+/* Miniaturas livianas (240 px) generadas de a pocas y solo cuando entran en
+   pantalla, para que con ~300 fotos grandes la ventana no se congele. */
+const thumbCache = new WeakMap();
+const thumbQueue = [];
+let thumbActive = 0;
+function queueThumb(file, imgEl){
+  const c = thumbCache.get(file);
+  if(c){ imgEl.src = c; return; }
+  thumbQueue.push({file, imgEl});
+  pumpThumbs();
+}
+function pumpThumbs(){
+  while(thumbActive < 3 && thumbQueue.length){
+    const job = thumbQueue.shift();
+    thumbActive++;
+    makeThumb(job.file).catch(()=> fileUrl(job.file)).then(url=>{
+      thumbCache.set(job.file, url);
+      if(job.imgEl.isConnected) job.imgEl.src = url;
+    }).then(()=>{ thumbActive--; pumpThumbs(); });
+  }
+}
+async function makeThumb(file){
+  const bmp = await createImageBitmap(file, {resizeWidth:240, resizeQuality:'medium'});
+  const c = document.createElement('canvas');
+  c.width = bmp.width; c.height = bmp.height;
+  c.getContext('2d').drawImage(bmp, 0, 0);
+  if(bmp.close) bmp.close();
+  const blob = await new Promise(r=>c.toBlob(r, 'image/jpeg', 0.7));
+  return URL.createObjectURL(blob);
+}
 const UPM_X = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+let upmViewList = [];
 let upmViewIdx = -1;
+let upmControlsKey = '';
+const upmFilter = {t:'', e:''};
+const upmTarget = {t:'', e:''};
+const upmToggled = new Map();
+
 function ensureUploadModal(){
   let ov = document.getElementById('upModal');
   if(ov) return ov;
   ov = document.createElement('div');
   ov.id = 'upModal';
   ov.className = 'upm-overlay';
-  ov.innerHTML = '<div class="upm"><div class="upm-head"><h3>Subir fotos</h3><button type="button" class="upm-x" id="upmClose" title="Cerrar ventana">'+UPM_X+'</button></div>' +
-    '<div class="upm-body"><div class="upm-drop" id="upmDrop"><b>Click para elegir fotos o arrastra aquí una carpeta completa</b><span>La tienda y la fecha se detectan del nombre de cada foto</span></div>' +
-    '<input type="file" id="upmInput" accept="image/*,.heic,.heif,.tif,.tiff,.avif" multiple style="display:none">' +
-    '<div id="upmGrid"></div></div>' +
+  ov.innerHTML = '<div class="upm"><div class="upm-head"><h3 id="upmTitle">Subir fotos</h3><button type="button" class="upm-x" id="upmClose" title="Cerrar ventana">'+UPM_X+'</button></div>' +
+    '<div class="upm-body" id="upmBody"><div id="upmControls"></div><div id="upmGrid"></div></div>' +
     '<div class="upm-foot"><div id="upmStatus"></div><button type="button" class="btn primary" id="upmDone">Listo</button></div></div>';
   document.body.appendChild(ov);
   ov.addEventListener('click', e=>{ if(e.target===ov) closeUploadModal(); });
   ov.querySelector('#upmClose').onclick = closeUploadModal;
   ov.querySelector('#upmDone').onclick = closeUploadModal;
-  const drop = ov.querySelector('#upmDrop'), input = ov.querySelector('#upmInput');
-  drop.onclick = ()=> input.click();
-  input.onchange = async ()=>{
-    const files = Array.from(input.files); input.value = '';
-    await upmProcess(files);
-  };
-  setupDropFilesOrFolder(drop, async (files)=>{ await upmProcess(files); });
 
   const vw = document.createElement('div');
   vw.id = 'upViewer';
@@ -2494,16 +2557,20 @@ function ensureUploadModal(){
   });
   return ov;
 }
-async function upmProcess(files){
-  if(!files.length) return;
+function upmSetBusy(msg){
   const st = document.getElementById('upmStatus');
-  if(st) st.innerHTML = '<span style="color:#667085;font-size:13px;">Leyendo '+files.length+' fotos...</span>';
+  if(st) st.innerHTML = '<span style="color:#667085;font-size:13px;">'+escapeHtml(msg)+'</span>';
+}
+async function upmProcessFlat(files){
+  if(!files.length) return;
+  upmSetBusy('Leyendo ' + files.length + ' fotos...');
   await processFilesFlat(files);
   refreshUploadModal();
 }
 function openUploadModal(){
   const ov = ensureUploadModal();
   ov.classList.add('open');
+  upmControlsKey = '';
   refreshUploadModal();
 }
 function closeUploadModal(){
@@ -2511,50 +2578,231 @@ function closeUploadModal(){
   if(ov) ov.classList.remove('open');
   closeUpViewer();
 }
+function upmSelect(id, options, allLabel, current){
+  let h = '<select id="'+id+'" class="upm-sel">';
+  if(allLabel !== null) h += '<option value="">'+escapeHtml(allLabel)+'</option>';
+  options.forEach(o=>{ h += '<option value="'+escapeHtml(o)+'"'+(o===current?' selected':'')+'>'+escapeHtml(o)+'</option>'; });
+  return h + '</select>';
+}
+function buildUpmControls(ctrl){
+  ctrl.innerHTML = '';
+  const mode = state.mode;
+  if(mode==='flat' || mode==='auto'){
+    const drop = document.createElement('div');
+    drop.className = 'upm-drop';
+    drop.innerHTML = '<b>Click para elegir fotos o arrastra aquí una carpeta completa</b><span>' + (mode==='auto' ? 'La tienda y la fecha se detectan del nombre de cada foto' : 'Se ordenan por fecha/hora según el nombre de cada foto') + '</span>';
+    const input = document.createElement('input');
+    input.type = 'file'; input.accept = 'image/*,.heic,.heif,.tif,.tiff,.avif'; input.multiple = true; input.style.display = 'none';
+    drop.onclick = ()=> input.click();
+    input.onchange = async ()=>{ const files = Array.from(input.files); input.value=''; await upmProcessFlat(files); };
+    setupDropFilesOrFolder(drop, async (files)=>{ await upmProcessFlat(files); });
+    ctrl.appendChild(drop); ctrl.appendChild(input);
+    return;
+  }
+  const hasT = (mode==='tiendas' || mode==='both');
+  const hasE = (mode==='elementos' || mode==='both');
+  if(!upmTarget.t || state.tiendas.indexOf(upmTarget.t)<0) upmTarget.t = state.tiendas[0] || '';
+  if(!upmTarget.e || state.elementos.indexOf(upmTarget.e)<0) upmTarget.e = state.elementos[0] || '';
+
+  const r1 = document.createElement('div');
+  r1.className = 'upm-row';
+  const what = mode==='tiendas' ? 'una subcarpeta por tienda' : (mode==='elementos' ? 'una subcarpeta por elemento' : 'una subcarpeta por tienda y, dentro, una por elemento');
+  r1.innerHTML = '<div><div class="upm-lbl">Carga general (carpeta)</div><div class="upm-sub">Carpeta con ' + what + '. Se clasifica sola por el nombre de cada subcarpeta.</div></div>';
+  const fbtn = document.createElement('button');
+  fbtn.type = 'button'; fbtn.className = 'btn'; fbtn.textContent = 'Elegir carpeta';
+  const finput = document.createElement('input');
+  finput.type = 'file'; finput.webkitdirectory = true; finput.multiple = true; finput.style.display = 'none';
+  fbtn.onclick = ()=> finput.click();
+  finput.onchange = async ()=>{
+    const files = Array.from(finput.files); finput.value = '';
+    if(!files.length) return;
+    upmSetBusy('Clasificando ' + files.length + ' fotos...');
+    await processGeneralFolder(files, mode);
+    refreshUploadModal();
+  };
+  r1.appendChild(fbtn); r1.appendChild(finput);
+  ctrl.appendChild(r1);
+
+  const r2 = document.createElement('div');
+  r2.className = 'upm-row';
+  r2.innerHTML = '<div><div class="upm-lbl">Subir fotos sueltas a</div><div class="upm-sub">Elige el destino y luego las fotos (o arrástralas sobre este recuadro).</div></div>' +
+    '<div class="upm-sels">' +
+    (hasT ? upmSelect('upmTgtT', state.tiendas, null, upmTarget.t) : '') +
+    (hasE ? upmSelect('upmTgtE', state.elementos, null, upmTarget.e) : '') + '</div>';
+  const pbtn = document.createElement('button');
+  pbtn.type = 'button'; pbtn.className = 'btn'; pbtn.textContent = 'Elegir fotos';
+  const pinput = document.createElement('input');
+  pinput.type = 'file'; pinput.accept = 'image/*,.heic,.heif,.tif,.tiff,.avif'; pinput.multiple = true; pinput.style.display = 'none';
+  pbtn.onclick = ()=> pinput.click();
+  const sendFiles = async (files)=>{
+    if(!files.length) return;
+    const t = hasT ? upmTarget.t : null, e = hasE ? upmTarget.e : null;
+    if((hasT && !t) || (hasE && !e)){ alert('Primero agrega tiendas/elementos en el paso 2.'); return; }
+    upmSetBusy('Leyendo ' + files.length + ' fotos...');
+    await processFilesToBucket(files, t, e);
+    refreshUploadModal();
+  };
+  pinput.onchange = async ()=>{ const files = Array.from(pinput.files); pinput.value=''; await sendFiles(files); };
+  r2.appendChild(pbtn); r2.appendChild(pinput);
+  setupDropFilesOrFolder(r2, async (files)=>{ await sendFiles(files); });
+  ctrl.appendChild(r2);
+  const tt = r2.querySelector('#upmTgtT'); if(tt) tt.onchange = ()=>{ upmTarget.t = tt.value; };
+  const te = r2.querySelector('#upmTgtE'); if(te) te.onchange = ()=>{ upmTarget.e = te.value; };
+
+  const r3 = document.createElement('div');
+  r3.className = 'upm-row upm-filters';
+  r3.innerHTML = '<div class="upm-lbl">Filtrar miniaturas</div><div class="upm-sels">' +
+    (hasT ? upmSelect('upmFltT', state.tiendas, 'Todas las tiendas', upmFilter.t) : '') +
+    (hasE ? upmSelect('upmFltE', state.elementos, 'Todos los elementos', upmFilter.e) : '') + '</div>';
+  ctrl.appendChild(r3);
+  const ft = r3.querySelector('#upmFltT'); if(ft) ft.onchange = ()=>{ upmFilter.t = ft.value; refreshUploadModal(); };
+  const fe = r3.querySelector('#upmFltE'); if(fe) fe.onchange = ()=>{ upmFilter.e = fe.value; refreshUploadModal(); };
+}
+function upmEntries(t, e){
+  return (state.buckets[bucketKey(t, e)] || []).map(p=>({p, t, e}));
+}
+function upmBuildSections(){
+  const mode = state.mode;
+  if(mode==='flat' || mode==='auto'){
+    return [{id:'all', title:null, entries: state.photos.map(p=>({p, t:null, e:null})), leaf:true}];
+  }
+  const secs = [];
+  if(mode==='tiendas'){
+    state.tiendas.forEach(t=>{
+      if(upmFilter.t && upmFilter.t!==t) return;
+      secs.push({id:'t:'+t, title:t, entries:upmEntries(t,null), leaf:true, t, e:null});
+    });
+  } else if(mode==='elementos'){
+    state.elementos.forEach(e=>{
+      if(upmFilter.e && upmFilter.e!==e) return;
+      secs.push({id:'e:'+e, title:e, entries:upmEntries(null,e), leaf:true, t:null, e});
+    });
+  } else {
+    state.tiendas.forEach(t=>{
+      if(upmFilter.t && upmFilter.t!==t) return;
+      const kids = [];
+      state.elementos.forEach(e=>{
+        if(upmFilter.e && upmFilter.e!==e) return;
+        kids.push({id:'t:'+t+'|e:'+e, title:e, entries:upmEntries(t,e), leaf:true, t, e});
+      });
+      secs.push({id:'t:'+t, title:t, children:kids, entries:kids.reduce((a,k)=>a.concat(k.entries),[]), leaf:false});
+    });
+  }
+  return secs;
+}
 function refreshUploadModal(){
   const ov = document.getElementById('upModal');
   if(!ov || !ov.classList.contains('open')) return;
+  const bucketMode = !(state.mode==='flat' || state.mode==='auto');
+  ov.querySelector('#upmTitle').textContent = bucketMode ? 'Fotos por tienda / elemento' : 'Subir fotos';
+  const key = state.mode + '|' + state.tiendas.join('~') + '|' + state.elementos.join('~');
+  const ctrl = ov.querySelector('#upmControls');
+  if(key !== upmControlsKey){ upmControlsKey = key; buildUpmControls(ctrl); }
+  const body = ov.querySelector('#upmBody');
+  const keepScroll = body.scrollTop;
   const grid = ov.querySelector('#upmGrid');
   grid.innerHTML = '';
-  if(state.photos.length===0){
-    grid.innerHTML = '<div class="upm-empty">Aún no hay fotos. Las miniaturas aparecerán aquí al subirlas.</div>';
-  } else {
+
+  const secs = upmBuildSections();
+  upmViewList = [];
+  secs.forEach(sc=> sc.entries.forEach(en=> upmViewList.push(en)));
+  const total = upmViewList.length;
+  const filterActive = !!(upmFilter.t || upmFilter.e);
+  const defaultOpen = total <= 60 || filterActive;
+
+  const io = ('IntersectionObserver' in window) ? new IntersectionObserver(entries=>{
+    entries.forEach(en=>{
+      if(en.isIntersecting){ io.unobserve(en.target); queueThumb(en.target._file, en.target); }
+    });
+  }, {root: body, rootMargin: '400px'}) : null;
+
+  function thumbGrid(entries){
     const g = document.createElement('div');
     g.className = 'upm-grid';
-    state.photos.forEach((p, idx)=>{
+    entries.forEach(en=>{
+      const p = en.p;
       const it = document.createElement('div');
       it.className = 'upm-item';
       const img = document.createElement('img');
-      img.src = photoUrl(p); img.alt = p.name; img.loading = 'lazy';
+      img.alt = p.name; img._file = p.file;
+      if(io) io.observe(img); else queueThumb(p.file, img);
       it.appendChild(img);
-      it.onclick = ()=> openUpViewer(idx);
+      it.onclick = ()=> openUpViewer(en);
       const del = document.createElement('button');
       del.type = 'button'; del.className = 'upm-del'; del.title = 'Eliminar esta foto';
       del.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
-      del.onclick = (e)=>{ e.stopPropagation(); deleteFlatPhoto(p); };
+      del.onclick = (ev)=>{ ev.stopPropagation(); deleteModalPhoto(en); };
       it.appendChild(del);
-      if(p.tienda){
+      const tagTxt = (p.tienda && (state.mode==='auto' || state.mode==='flat') ? p.tienda + (p.label ? ' · ' + p.label : '') : (p.label || ''));
+      if(tagTxt){
         const tag = document.createElement('div');
-        tag.className = 'upm-tag';
-        tag.textContent = p.tienda + (p.label ? ' · ' + p.label : '');
+        tag.className = 'upm-tag'; tag.textContent = tagTxt;
         it.appendChild(tag);
       }
       g.appendChild(it);
     });
-    grid.appendChild(g);
+    return g;
+  }
+  function renderSection(sc, parent, level){
+    if(sc.title === null){
+      if(sc.entries.length===0){
+        parent.innerHTML = '<div class="upm-empty">Aún no hay fotos. Las miniaturas aparecerán aquí al subirlas.</div>';
+      } else parent.appendChild(thumbGrid(sc.entries));
+      return;
+    }
+    const open = upmToggled.has(sc.id) ? upmToggled.get(sc.id) : defaultOpen;
+    const box = document.createElement('div');
+    box.className = 'upm-sec' + (level>0 ? ' upm-sec-sub' : '');
+    const head = document.createElement('div');
+    head.className = 'upm-sec-h' + (open ? ' open' : '');
+    head.innerHTML = '<span class="upm-chev">'+icon('chevron')+'</span><span class="upm-sec-name">'+escapeHtml(sc.title)+'</span>' +
+      '<span class="count-badge'+(sc.entries.length>0?' has':'')+'">'+sc.entries.length+' fotos</span>';
+    if(sc.leaf && sc.entries.length>0){
+      const clr = document.createElement('button');
+      clr.type = 'button'; clr.className = 'clear-btn-mini'; clr.title = 'Vaciar fotos de esta sección';
+      clr.innerHTML = icon('trash');
+      clr.onclick = (ev)=>{ ev.stopPropagation(); clearBucket(sc.t, sc.e); };
+      head.appendChild(clr);
+    }
+    head.onclick = ()=>{ upmToggled.set(sc.id, !open); refreshUploadModal(); };
+    box.appendChild(head);
+    if(open){
+      const inner = document.createElement('div');
+      inner.className = 'upm-sec-b';
+      if(sc.leaf){
+        if(sc.entries.length===0) inner.innerHTML = '<div class="upm-empty">Sin fotos</div>';
+        else inner.appendChild(thumbGrid(sc.entries));
+      } else {
+        sc.children.forEach(k=> renderSection(k, inner, level+1));
+      }
+      box.appendChild(inner);
+    }
+    parent.appendChild(box);
+  }
+  if(bucketMode && secs.length===0){
+    grid.innerHTML = '<div class="upm-empty">Agrega tiendas/elementos en el paso 2 para poder subir fotos.</div>';
+  } else {
+    secs.forEach(sc=> renderSection(sc, grid, 0));
   }
   ov.querySelector('#upmStatus').innerHTML = loadedStatusHtml() +
-    (lastFlatNote ? '<div style="color:#b54708;font-size:12px;margin-top:4px;">'+escapeHtml(lastFlatNote)+'</div>' : '');
+    (!bucketMode && lastFlatNote ? '<div style="color:#b54708;font-size:12px;margin-top:4px;">'+escapeHtml(lastFlatNote)+'</div>' : '');
+  body.scrollTop = keepScroll;
 }
-function deleteFlatPhoto(p){
-  state.photos = state.photos.filter(x=>x!==p);
-  log('Foto eliminada: ' + p.name);
+function deleteModalPhoto(en){
+  if(en.t===null && en.e===null){
+    state.photos = state.photos.filter(x=>x!==en.p);
+  } else {
+    const list = state.buckets[bucketKey(en.t, en.e)];
+    const i = list ? list.indexOf(en.p) : -1;
+    if(i>=0) list.splice(i,1);
+  }
+  log('Foto eliminada: ' + en.p.name);
   rebuildUploadArea();
   refreshUploadModal();
 }
-function openUpViewer(idx){
+function openUpViewer(en){
   ensureUploadModal();
-  upmViewIdx = idx;
+  upmViewIdx = Math.max(0, upmViewList.indexOf(en));
   document.getElementById('upViewer').classList.add('open');
   renderUpViewer();
 }
@@ -2563,18 +2811,19 @@ function closeUpViewer(){
   if(vw) vw.classList.remove('open');
 }
 function stepUpViewer(d){
-  const n = state.photos.length;
+  const n = upmViewList.length;
   if(!n) return;
   upmViewIdx = (upmViewIdx + d + n) % n;
   renderUpViewer();
 }
 function renderUpViewer(){
   const vw = document.getElementById('upViewer');
-  const p = state.photos[upmViewIdx];
-  if(!p){ closeUpViewer(); return; }
-  vw.querySelector('.upv-img').src = photoUrl(p);
-  vw.querySelector('.upv-cap').textContent = (upmViewIdx+1) + ' / ' + state.photos.length + ' — ' + p.name;
-  const multi = state.photos.length > 1;
+  const en = upmViewList[upmViewIdx];
+  if(!en){ closeUpViewer(); return; }
+  vw.querySelector('.upv-img').src = photoUrl(en.p);
+  const where = [en.t, en.e].filter(Boolean).join(' / ') || en.p.tienda || '';
+  vw.querySelector('.upv-cap').textContent = (upmViewIdx+1) + ' / ' + upmViewList.length + (where ? ' — ' + where : '') + ' — ' + en.p.name;
+  const multi = upmViewList.length > 1;
   vw.querySelector('.upv-prev').style.display = multi ? 'flex' : 'none';
   vw.querySelector('.upv-next').style.display = multi ? 'flex' : 'none';
 }
@@ -3330,7 +3579,7 @@ async function drawSlide(slide, design, skippedOut){
     }
     const n = slide.photos.length;
     const layout = getContentLayout(slide, n);
-    const slots = layout.slots;
+    const slots = getSlideSlots(slide, layout);
     const dateSlots = layout.dates;
     for(let i=0;i<slots.length;i++){
       const p = slide.photos[i];
@@ -3377,7 +3626,7 @@ async function drawSlide(slide, design, skippedOut){
         // título o el pie de página; de todas formas quedan centradas
         // sobre la misma línea que sus vecinas.
         let scale = bw/img.width;
-        const maxH = bh*1.25;
+        const maxH = bh;
         if(img.height*scale > maxH) scale = maxH/img.height;
         const dw = img.width*scale, dh = img.height*scale;
         const dx = bx + (bw-dw)/2, dy = by + (bh-dh)/2;
@@ -3589,7 +3838,7 @@ async function buildPptxFile(slideModel, filename, onProgress){
       }
       const n = slide.photos.length;
       const layout = getContentLayout(slide, n);
-      const slots = layout.slots;
+      const slots = getSlideSlots(slide, layout);
       const dateSlots = layout.dates;
       for(let i=0;i<slots.length;i++){
         const p = slide.photos[i];
@@ -3626,7 +3875,7 @@ async function buildPptxFile(slideModel, filename, onProgress){
             });
             if(dims && dims.width && dims.height){
               let scale = box.w/dims.width;
-              const maxH = box.h*1.25;
+              const maxH = box.h;
               if(dims.height*scale > maxH) scale = maxH/dims.height;
               const dw = dims.width*scale, dh = dims.height*scale;
               const dx = box.x + (box.w-dw)/2, dy = box.y + (box.h-dh)/2;
