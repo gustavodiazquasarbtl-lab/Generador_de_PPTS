@@ -985,6 +985,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   .upm-sels{display:flex;gap:8px;flex-wrap:wrap;}
   .upm-sel{padding:7px 10px;border:1px solid #d0d5dd;border-radius:8px;font-size:13px;max-width:200px;background:#fff;}
   .upm-row > div:first-child{flex:1 1 240px;min-width:0;}
+  .upm-move{position:sticky;top:-16px;z-index:5;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;margin-bottom:10px;border:1px solid #3b5bdb;border-radius:10px;background:#eef3ff;box-shadow:0 4px 10px rgba(0,0,0,.08);}
+  .upm-move-lbl{font-size:13px;color:#344054;}
+  .upm-chk{position:absolute;top:6px;left:6px;width:18px;height:18px;cursor:pointer;accent-color:#3b5bdb;}
+  .upm-item.selected{outline:3px solid #3b5bdb;outline-offset:-3px;}
+  .upm-secchk{width:16px;height:16px;cursor:pointer;accent-color:#3b5bdb;}
   .upm-row.dragover{background:#e8eefc;border-color:#3b5bdb;border-style:solid;}
   .upm-filters{background:#fff;border-style:solid;border-color:#e5e7eb;}
   .upm-sec{border:1px solid #e5e7eb;border-radius:10px;margin-bottom:8px;overflow:hidden;}
@@ -995,6 +1000,21 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   .upm-chev{display:inline-flex;transition:transform .15s;}
   .upm-sec-h.open .upm-chev{transform:rotate(90deg);}
   .upm-sec-b{padding:10px 12px 12px;}
+
+  /* ---- Vista previa en vivo ---- */
+  .live-panel{position:fixed;top:16px;right:16px;width:400px;max-width:calc(100vw - 32px);background:#fff;border:1px solid #d9dfeb;border-radius:14px;box-shadow:0 12px 36px rgba(15,23,42,.22);z-index:800;display:none;overflow:hidden;}
+  .live-head{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid #e5e7eb;background:#f8fafc;font-size:13px;}
+  .live-head b{flex:1;}
+  .live-tabs{display:flex;gap:2px;background:#e8ecf4;border-radius:8px;padding:2px;}
+  .live-tabs button{border:none;background:transparent;font-size:12px;padding:4px 9px;border-radius:6px;cursor:pointer;color:#475467;}
+  .live-tabs button.on{background:#fff;color:#101828;font-weight:700;box-shadow:0 1px 2px rgba(0,0,0,.12);}
+  .live-min{border:none;background:#e8ecf4;width:26px;height:26px;border-radius:7px;cursor:pointer;font-size:16px;line-height:1;}
+  .live-body{padding:10px;background:#eef1f7;min-height:120px;}
+  .live-body canvas{display:block;border:1px solid #d0d5dd;border-radius:8px;background:#fff;}
+  .live-note{font-size:13px;color:#667085;text-align:center;padding:30px 10px;}
+  .live-foot{font-size:11px;color:#667085;padding:7px 12px;border-top:1px solid #e5e7eb;}
+  .live-pill{position:fixed;right:16px;bottom:16px;z-index:800;border:none;background:#0b1f4d;color:#fff;font-weight:700;font-size:13px;padding:10px 16px;border-radius:999px;box-shadow:0 6px 18px rgba(0,0,0,.3);cursor:pointer;display:none;}
+  body.has-live .wrap, body.has-live .topbar-inner{margin-left:24px;margin-right:auto;}
 </style>
 </head>
 <body>
@@ -1111,6 +1131,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     <div class="checkbox-line">
       <input type="checkbox" id="reskinSplitEvery45">
       <div><div class="lbl">Dividir en archivos de 45 diapositivas</div><div class="sub">Recomendado para decks grandes (varios cientos de fotos)</div></div>
+    </div>
+    <div class="checkbox-line">
+      <input type="checkbox" id="reskinZipOutput" checked>
+      <div><div class="lbl">Descargar todo en un solo ZIP</div><div class="sub">Junta todas las partes (PPTX y PDF) en un único archivo. Si con muchas fotos falla por memoria, desmárcalo.</div></div>
     </div>
 
     <div class="summary-line" id="reskinSummary">Ningún archivo cargado.</div>
@@ -1234,6 +1258,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     <div class="checkbox-line">
       <input type="checkbox" id="splitEvery45">
       <div><div class="lbl">Dividir en archivos de 45 diapositivas</div><div class="sub">Recomendado para decks grandes (varios cientos de fotos)</div></div>
+    </div>
+    <div class="checkbox-line">
+      <input type="checkbox" id="zipOutput" checked>
+      <div><div class="lbl">Descargar todo en un solo ZIP</div><div class="sub">Junta todas las partes (PPTX y PDF) en un único archivo. Si con muchas fotos falla por memoria, desmárcalo.</div></div>
     </div>
 
     <div class="summary-line" id="summaryLine">Sin fotos cargadas todavía.</div>
@@ -1705,7 +1733,23 @@ function genStart(flow, kind){
   genCtl.donePromise = new Promise(r=>{ genCtl.doneResolve = r; });
   genUiUpdate();
 }
+/* ===== ZIP: junta todas las partes en un solo archivo ===== */
+let zipCollector = null;
+function startZip(checkboxId){
+  const cb = document.getElementById(checkboxId);
+  zipCollector = (cb && cb.checked && typeof JSZip !== 'undefined') ? {zip: new JSZip(), files: 0} : null;
+}
+async function finishZip(zipName){
+  const c = zipCollector;
+  zipCollector = null;
+  if(!c || !c.files) return;
+  setProgress(99, 'Comprimiendo ZIP...');
+  const blob = await c.zip.generateAsync({type:'blob', compression:'STORE'});
+  downloadBlob(blob, zipName + '.zip');
+  log('ZIP generado: ' + zipName + '.zip (' + c.files + ' archivos)');
+}
 function genEnd(){
+  zipCollector = null;
   genCtl.running = false; genCtl.paused = false;
   genUiUpdate();
   if(genCtl.doneResolve){ genCtl.doneResolve(); genCtl.doneResolve = null; }
@@ -2514,6 +2558,58 @@ let upmControlsKey = '';
 const upmFilter = {t:'', e:''};
 const upmTarget = {t:'', e:''};
 const upmToggled = new Map();
+const upmSel = new Set();            // fotos seleccionadas para mover
+const upmMoveTo = {t:'', e:''};      // destino elegido ('' = sin cambiar)
+function upmLocate(p){
+  for(const [key, list] of Object.entries(state.buckets)){
+    if(list.indexOf(p) >= 0){
+      const parts = key.split('||');
+      return {key, list, t: parts[0] || null, e: parts[1] || null};
+    }
+  }
+  return null;
+}
+function upmRenderMoveBar(){
+  const bar = document.getElementById('upmMoveBar');
+  if(!bar) return;
+  const bucketMode = !(state.mode==='flat' || state.mode==='auto');
+  // limpiar de la selección fotos que ya no existen
+  Array.from(upmSel).forEach(p=>{ if(!upmLocate(p)) upmSel.delete(p); });
+  if(!bucketMode || upmSel.size===0){ bar.innerHTML = ''; return; }
+  const hasT = (state.mode==='tiendas' || state.mode==='both');
+  const hasE = (state.mode==='elementos' || state.mode==='both');
+  bar.innerHTML = '<div class="upm-move"><b>' + upmSel.size + (upmSel.size===1 ? ' foto seleccionada' : ' fotos seleccionadas') + '</b>' +
+    '<span class="upm-move-lbl">Mover a:</span>' +
+    (hasT ? upmSelect('upmMvT', state.tiendas, '— tienda sin cambiar —', upmMoveTo.t) : '') +
+    (hasE ? upmSelect('upmMvE', state.elementos, '— elemento sin cambiar —', upmMoveTo.e) : '') +
+    '<button type="button" class="btn primary" id="upmMvGo">Mover</button>' +
+    '<button type="button" class="btn" id="upmMvCancel">Quitar selección</button></div>';
+  const mt = bar.querySelector('#upmMvT'); if(mt) mt.onchange = ()=>{ upmMoveTo.t = mt.value; };
+  const me = bar.querySelector('#upmMvE'); if(me) me.onchange = ()=>{ upmMoveTo.e = me.value; };
+  bar.querySelector('#upmMvCancel').onclick = ()=>{ upmSel.clear(); refreshUploadModal(); };
+  bar.querySelector('#upmMvGo').onclick = ()=> upmMoveSelected(hasT, hasE);
+}
+function upmMoveSelected(hasT, hasE){
+  const newT = hasT ? (upmMoveTo.t || null) : null;
+  const newE = hasE ? (upmMoveTo.e || null) : null;
+  if(!newT && !newE){ alert('Elige a qué tienda y/o elemento quieres mover las fotos.'); return; }
+  let moved = 0;
+  Array.from(upmSel).forEach(p=>{
+    const loc = upmLocate(p);
+    if(!loc) return;
+    const destT = hasT ? (newT || loc.t) : null;
+    const destE = hasE ? (newE || loc.e) : null;
+    const destKey = bucketKey(destT, destE);
+    if(destKey === loc.key) return;
+    loc.list.splice(loc.list.indexOf(p), 1);
+    state.buckets[destKey] = sortPhotos((state.buckets[destKey] || []).concat([p]));
+    moved++;
+  });
+  upmSel.clear();
+  log('Fotos movidas: ' + moved);
+  rebuildUploadArea();
+  refreshUploadModal();
+}
 
 function ensureUploadModal(){
   let ov = document.getElementById('upModal');
@@ -2522,7 +2618,7 @@ function ensureUploadModal(){
   ov.id = 'upModal';
   ov.className = 'upm-overlay';
   ov.innerHTML = '<div class="upm"><div class="upm-head"><h3 id="upmTitle">Subir fotos</h3><button type="button" class="upm-x" id="upmClose" title="Cerrar ventana">'+UPM_X+'</button></div>' +
-    '<div class="upm-body" id="upmBody"><div id="upmControls"></div><div id="upmGrid"></div></div>' +
+    '<div class="upm-body" id="upmBody"><div id="upmControls"></div><div id="upmMoveBar"></div><div id="upmGrid"></div></div>' +
     '<div class="upm-foot"><div id="upmStatus"></div><button type="button" class="btn primary" id="upmDone">Listo</button></div></div>';
   document.body.appendChild(ov);
   ov.addEventListener('click', e=>{ if(e.target===ov) closeUploadModal(); });
@@ -2733,6 +2829,19 @@ function refreshUploadModal(){
       del.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
       del.onclick = (ev)=>{ ev.stopPropagation(); deleteModalPhoto(en); };
       it.appendChild(del);
+      if(bucketMode){
+        const chk = document.createElement('input');
+        chk.type = 'checkbox'; chk.className = 'upm-chk'; chk.title = 'Seleccionar para mover';
+        chk.checked = upmSel.has(p);
+        if(chk.checked) it.classList.add('selected');
+        chk.onclick = (ev)=> ev.stopPropagation();
+        chk.onchange = ()=>{
+          if(chk.checked) upmSel.add(p); else upmSel.delete(p);
+          it.classList.toggle('selected', chk.checked);
+          upmRenderMoveBar();
+        };
+        it.appendChild(chk);
+      }
       const tagTxt = (p.tienda && (state.mode==='auto' || state.mode==='flat') ? p.tienda + (p.label ? ' · ' + p.label : '') : (p.label || ''));
       if(tagTxt){
         const tag = document.createElement('div');
@@ -2755,7 +2864,9 @@ function refreshUploadModal(){
     box.className = 'upm-sec' + (level>0 ? ' upm-sec-sub' : '');
     const head = document.createElement('div');
     head.className = 'upm-sec-h' + (open ? ' open' : '');
-    head.innerHTML = '<span class="upm-chev">'+icon('chevron')+'</span><span class="upm-sec-name">'+escapeHtml(sc.title)+'</span>' +
+    head.innerHTML = '<span class="upm-chev">'+icon('chevron')+'</span>' +
+      (bucketMode && sc.entries.length>0 ? '<input type="checkbox" class="upm-secchk" title="Seleccionar todas las fotos de esta sección"'+(sc.entries.every(en=>upmSel.has(en.p))?' checked':'')+'>' : '') +
+      '<span class="upm-sec-name">'+escapeHtml(sc.title)+'</span>' +
       '<span class="count-badge'+(sc.entries.length>0?' has':'')+'">'+sc.entries.length+' fotos</span>';
     if(sc.leaf && sc.entries.length>0){
       const clr = document.createElement('button');
@@ -2763,6 +2874,14 @@ function refreshUploadModal(){
       clr.innerHTML = icon('trash');
       clr.onclick = (ev)=>{ ev.stopPropagation(); clearBucket(sc.t, sc.e); };
       head.appendChild(clr);
+    }
+    const secChk = head.querySelector('.upm-secchk');
+    if(secChk){
+      secChk.onclick = (ev)=> ev.stopPropagation();
+      secChk.onchange = ()=>{
+        if(secChk.checked) sc.entries.forEach(en=>upmSel.add(en.p)); else sc.entries.forEach(en=>upmSel.delete(en.p));
+        refreshUploadModal();
+      };
     }
     head.onclick = ()=>{ upmToggled.set(sc.id, !open); refreshUploadModal(); };
     box.appendChild(head);
@@ -2784,6 +2903,7 @@ function refreshUploadModal(){
   } else {
     secs.forEach(sc=> renderSection(sc, grid, 0));
   }
+  upmRenderMoveBar();
   ov.querySelector('#upmStatus').innerHTML = loadedStatusHtml() +
     (!bucketMode && lastFlatNote ? '<div style="color:#b54708;font-size:12px;margin-top:4px;">'+escapeHtml(lastFlatNote)+'</div>' : '');
   body.scrollTop = keepScroll;
@@ -3403,6 +3523,7 @@ function totalPhotoCount(){
 }
 function updateSummary(){
   if(typeof updateTitleModeAvailability === 'function') updateTitleModeAvailability();
+  if(typeof scheduleLivePreview === 'function') scheduleLivePreview();
   const n = totalPhotoCount();
   document.getElementById('summaryLine').textContent =
     n>0 ? (n + ' fotos listas · ~' + estimateSlideCount() + ' diapositivas estimadas') : 'Sin fotos cargadas todavía.';
@@ -3759,6 +3880,104 @@ async function drawSlide(slide, design, skippedOut){
   return canvas;
 }
 
+
+/* ===================== VISTA PREVIA EN VIVO ===================== */
+const live = {open:false, tab:'content', timer:null, busy:false, again:false};
+function ensureLivePanel(){
+  let el = document.getElementById('livePanel');
+  if(el) return el;
+  el = document.createElement('div');
+  el.id = 'livePanel';
+  el.className = 'live-panel';
+  el.innerHTML = '<div class="live-head"><b>Vista previa en vivo</b>' +
+    '<div class="live-tabs"><button type="button" data-tab="cover">Portada</button><button type="button" data-tab="content" class="on">Contenido</button></div>' +
+    '<button type="button" class="live-min" id="liveMin" title="Minimizar">&minus;</button></div>' +
+    '<div class="live-body" id="liveBody"></div>' +
+    '<div class="live-foot">Se actualiza sola al cambiar diseño, títulos, fecha o fotos.</div>';
+  document.body.appendChild(el);
+  const pill = document.createElement('button');
+  pill.type = 'button'; pill.id = 'livePill'; pill.className = 'live-pill';
+  pill.textContent = 'Vista previa en vivo';
+  document.body.appendChild(pill);
+  pill.onclick = ()=> setLiveOpen(true);
+  el.querySelector('#liveMin').onclick = ()=> setLiveOpen(false);
+  el.querySelectorAll('.live-tabs button').forEach(btn=>{
+    btn.onclick = ()=>{
+      live.tab = btn.dataset.tab;
+      el.querySelectorAll('.live-tabs button').forEach(b=>b.classList.toggle('on', b===btn));
+      renderLivePreview();
+    };
+  });
+  ['input','change','click'].forEach(ev=>document.addEventListener(ev, e=>{
+    if(el.contains(e.target)) return;
+    scheduleLivePreview();
+  }, true));
+  window.addEventListener('resize', applyLiveLayout);
+  return el;
+}
+/* Solo se muestra dentro de un flujo (no en la pantalla inicial de elegir modo) */
+function liveFlowVisible(){
+  return ['flowNueva','flowExistente'].some(id=>{
+    const e = document.getElementById(id);
+    return !!(e && e.offsetParent !== null);
+  });
+}
+function syncLiveVisibility(){
+  const panel = document.getElementById('livePanel'), pill = document.getElementById('livePill');
+  if(!panel || !pill) return;
+  const inFlow = liveFlowVisible();
+  panel.style.display = (live.open && inFlow) ? 'block' : 'none';
+  pill.style.display = (!live.open && inFlow) ? 'block' : 'none';
+  document.body.classList.toggle('has-live', live.open && inFlow && window.innerWidth >= 1440);
+}
+function applyLiveLayout(){ syncLiveVisibility(); }
+function setLiveOpen(on){
+  ensureLivePanel();
+  live.open = on;
+  syncLiveVisibility();
+  if(on) renderLivePreview();
+}
+function scheduleLivePreview(){
+  clearTimeout(live.timer);
+  live.timer = setTimeout(renderLivePreview, 350);
+}
+async function renderLivePreview(){
+  syncLiveVisibility();
+  if(!live.open || !liveFlowVisible()) return;
+  if(live.busy){ live.again = true; return; }
+  live.busy = true;
+  const body = document.getElementById('liveBody');
+  try{
+    let slide = null, note = '';
+    if(live.tab === 'cover'){
+      const lines = document.getElementById('pptTitle').value.split('\n').filter(l=>l.trim().length);
+      slide = {type:'cover', lines};
+    } else if(state.appMode === 'existente'){
+      slide = getReskinSampleContentSlide();
+      if(!slide) note = 'Sube un PPT en el paso 2 para ver cómo quedará con el formato.';
+    } else {
+      slide = buildContentPreviewSlide().slide;
+    }
+    if(slide){
+      const canvas = await drawSlide(slide, state.design);
+      canvas.style.width = '100%'; canvas.style.height = 'auto';
+      body.innerHTML = '';
+      body.appendChild(canvas);
+    } else {
+      body.innerHTML = '<div class="live-note">' + escapeHtml(note) + '</div>';
+    }
+  } catch(err){
+    console.error(err);
+    body.innerHTML = '<div class="live-note">No se pudo generar la vista previa.</div>';
+  }
+  live.busy = false;
+  if(live.again){ live.again = false; scheduleLivePreview(); }
+}
+window.addEventListener('load', ()=>{
+  ensureLivePanel();
+  setLiveOpen(window.innerWidth >= 1440);
+});
+
 /* ===================== PREVIEW ===================== */
 function getPreviewBox(){
   return document.getElementById(state.appMode === 'existente' ? 'reskinPreviewBox' : 'previewBox');
@@ -3794,25 +4013,9 @@ function getSamplePhotosForPreview(n){
   return [];
 }
 
-async function previewContent(){
-  if(state.appMode === 'existente'){
-    const slide = getReskinSampleContentSlide();
-    if(!slide){ alert('Primero sube un PPT válido en el paso 2.'); return; }
-    setProgress(0, 'Generando vista previa...');
-    const canvas = await drawSlide(slide, state.design);
-    hideProgress();
-    const box = getPreviewBox();
-    box.innerHTML = '';
-    box.dataset.kind = 'content';
-    box.appendChild(canvas);
-    return;
-  }
+function buildContentPreviewSlide(){
   const n = getPhotosPerSlide();
   const sample = getSamplePhotosForPreview(n);
-  if(sample.length === 0){
-    alert('Primero sube algunas fotos en el paso 4.');
-    return;
-  }
   while(sample.length < n) sample.push(null);
   const titleMode = document.querySelector('input[name=titleMode]:checked').value;
   const showDate = document.getElementById('showDate').checked;
@@ -3833,7 +4036,30 @@ async function previewContent(){
     } else title = state.tiendas[0] || 'TIENDA';
   }
   const footer = state.tiendas.length ? state.tiendas[0] : '';
+  const hasPhotos = sample.some(Boolean);
   const slide = {type:'content', title, footer, showDate, photos: sample, auto: state.mode === 'auto'};
+  return {slide, hasPhotos};
+}
+
+async function previewContent(){
+  if(state.appMode === 'existente'){
+    const slide = getReskinSampleContentSlide();
+    if(!slide){ alert('Primero sube un PPT válido en el paso 2.'); return; }
+    setProgress(0, 'Generando vista previa...');
+    const canvas = await drawSlide(slide, state.design);
+    hideProgress();
+    const box = getPreviewBox();
+    box.innerHTML = '';
+    box.dataset.kind = 'content';
+    box.appendChild(canvas);
+    return;
+  }
+  const built = buildContentPreviewSlide();
+  if(!built.hasPhotos){
+    alert('Primero sube algunas fotos en el paso 4.');
+    return;
+  }
+  const slide = built.slide;
   setProgress(0, 'Generando vista previa...');
   const canvas = await drawSlide(slide, state.design);
   hideProgress();
@@ -4016,7 +4242,13 @@ async function buildPptxFile(slideModel, filename, onProgress){
     }
   }
 
-  await pptx.writeFile({fileName: filename});
+  if(zipCollector){
+    const blob = await pptx.write({outputType:'blob'});
+    zipCollector.zip.file(filename, blob);
+    zipCollector.files++;
+  } else {
+    await pptx.writeFile({fileName: filename});
+  }
   return skipped;
 }
 
@@ -4033,7 +4265,12 @@ async function buildPdfFile(slideModel, filename, onProgress){
     doc.addImage(dataURL, 'JPEG', 0, 0, SLIDE_W, SLIDE_H);
     if(onProgress) onProgress(i+1, slideModel.length);
   }
-  doc.save(filename);
+  if(zipCollector){
+    zipCollector.zip.file(filename, doc.output('blob'));
+    zipCollector.files++;
+  } else {
+    doc.save(filename);
+  }
   return skipped;
 }
 
@@ -4067,6 +4304,7 @@ async function generateOutput(kind){
   btn.disabled = true;
   genStart('nueva', kind);
   try{
+    startZip('zipOutput');
     const kinds = kind==='both' ? ['pptx','pdf'] : [kind];
     const slideModel = buildSlideModel();
     const totalPhotoCountForFile = totalPhotoCount();
@@ -4087,7 +4325,7 @@ async function generateOutput(kind){
     let stepDone = 0;
 
     for(let i=0;i<groups.length;i++){
-      const suffix = groups.length>1 ? ('_Parte' + (i+1)) : '';
+      const suffix = groups.length>1 ? ('_' + (i+1)) : '';
       const partLabel = groups.length>1 ? (' (parte '+(i+1)+'/'+groups.length+')') : '';
       for(const k of kinds){
         await genCheckpoint();
@@ -4116,6 +4354,7 @@ async function generateOutput(kind){
         await new Promise(r=>setTimeout(r, 2000));
       }
     }
+    await finishZip(baseTitle);
     setProgress(100, 'Listo.');
     if(skippedAll.length){
       log(skippedAll.length + ' foto(s) fueron omitidas por error de lectura. Revisa el registro arriba.');
@@ -4371,6 +4610,7 @@ async function generateReskin(kind){
   btn.disabled = true;
   genStart('existente', kind);
   try{
+    startZip('reskinZipOutput');
     let model = reskinSlideModel.slice();
     const useElementTitle = document.getElementById('reskinUseElementTitle').checked;
     const elementName = document.getElementById('reskinElementName').value.trim();
@@ -4388,7 +4628,7 @@ async function generateReskin(kind){
     const totalSteps = groups.length * kinds.length;
     let stepDone = 0;
     for(let i=0;i<groups.length;i++){
-      const suffix = groups.length>1 ? ('_Parte' + (i+1)) : '';
+      const suffix = groups.length>1 ? ('_' + (i+1)) : '';
       const partLabel = groups.length>1 ? (' (parte '+(i+1)+'/'+groups.length+')') : '';
       for(const k of kinds){
         await genCheckpoint();
@@ -4410,6 +4650,7 @@ async function generateReskin(kind){
         await new Promise(r=>setTimeout(r, 2000));
       }
     }
+    await finishZip(baseTitle);
     setProgress(100, 'Listo.');
     setTimeout(hideProgress, 800);
   }catch(err){
