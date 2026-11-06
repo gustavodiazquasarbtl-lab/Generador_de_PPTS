@@ -985,6 +985,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   .upm-sels{display:flex;gap:8px;flex-wrap:wrap;}
   .upm-sel{padding:7px 10px;border:1px solid #d0d5dd;border-radius:8px;font-size:13px;max-width:200px;background:#fff;}
   .upm-row > div:first-child{flex:1 1 240px;min-width:0;}
+  .upm-row.dragover{background:#e8eefc;border-color:#3b5bdb;border-style:solid;}
   .upm-filters{background:#fff;border-style:solid;border-color:#e5e7eb;}
   .upm-sec{border:1px solid #e5e7eb;border-radius:10px;margin-bottom:8px;overflow:hidden;}
   .upm-sec-sub{margin:8px 0 0 14px;}
@@ -2412,34 +2413,31 @@ function rebuildUploadArea(){
     hint.textContent = 'Sube todas las fotos juntas. Se ordenarán automáticamente por fecha/hora según el nombre del archivo.';
     area.appendChild(buildFlatUploadZone());
   } else if(state.mode === 'tiendas'){
-    hint.textContent = 'Sube las fotos de cada tienda. Puedes usar la carga general (una carpeta con subcarpetas por tienda) o subir tienda por tienda.';
+    hint.textContent = 'Abre la ventana de fotos para subir una carpeta general (con subcarpetas por tienda) o fotos sueltas a una tienda.';
     if(state.tiendas.length===0){
       area.innerHTML = '<div class="warn-box">Agrega al menos una tienda en el paso 2.</div>';
       renderUnclassified(); renderInvalid(); updateSummary();
       return;
     }
     area.appendChild(buildModalLauncher());
-    area.appendChild(buildGeneralFolderZone('tiendas'));
     state.tiendas.forEach(t=> area.appendChild(buildBucketUploadZone(t, null)));
   } else if(state.mode === 'elementos'){
-    hint.textContent = 'Sube las fotos de cada elemento. Puedes usar la carga general (una carpeta con subcarpetas por elemento) o subir elemento por elemento.';
+    hint.textContent = 'Abre la ventana de fotos para subir una carpeta general (con subcarpetas por elemento) o fotos sueltas a un elemento.';
     if(state.elementos.length===0){
       area.innerHTML = '<div class="warn-box">Agrega al menos un elemento en el paso 2.</div>';
       renderUnclassified(); renderInvalid(); updateSummary();
       return;
     }
     area.appendChild(buildModalLauncher());
-    area.appendChild(buildGeneralFolderZone('elementos'));
     state.elementos.forEach(e=> area.appendChild(buildBucketUploadZone(null, e)));
   } else if(state.mode === 'both'){
-    hint.textContent = 'Sube una carpeta general (Tienda > Elemento > fotos) o, por cada tienda, la carpeta con sus subcarpetas de elementos. Se clasifican automáticamente por el nombre de cada subcarpeta.';
+    hint.textContent = 'Abre la ventana de fotos para subir una carpeta general (Tienda > Elemento > fotos) o fotos sueltas a una tienda y elemento. Se clasifican por el nombre de cada subcarpeta.';
     if(state.tiendas.length===0 || state.elementos.length===0){
       area.innerHTML = '<div class="warn-box">Agrega al menos una tienda y un elemento en el paso 2.</div>';
       renderUnclassified(); renderInvalid(); updateSummary();
       return;
     }
     area.appendChild(buildModalLauncher());
-    area.appendChild(buildGeneralFolderZone('both'));
     state.tiendas.forEach(t=> area.appendChild(buildFolderUploadZone(t)));
   } else if(state.mode === 'auto'){
     hint.textContent = 'Sube todas las fotos juntas (sin subcarpetas). La tienda y la fecha de cada foto se detectan automáticamente de su nombre de archivo.';
@@ -2607,7 +2605,7 @@ function buildUpmControls(ctrl){
   const r1 = document.createElement('div');
   r1.className = 'upm-row';
   const what = mode==='tiendas' ? 'una subcarpeta por tienda' : (mode==='elementos' ? 'una subcarpeta por elemento' : 'una subcarpeta por tienda y, dentro, una por elemento');
-  r1.innerHTML = '<div><div class="upm-lbl">Carga general (carpeta)</div><div class="upm-sub">Carpeta con ' + what + '. Se clasifica sola por el nombre de cada subcarpeta.</div></div>';
+  r1.innerHTML = '<div><div class="upm-lbl">Carga general (carpeta)</div><div class="upm-sub">Arrastra aquí una carpeta con ' + what + ', o usa el botón. Se clasifica sola por el nombre de cada subcarpeta.</div></div>';
   const fbtn = document.createElement('button');
   fbtn.type = 'button'; fbtn.className = 'btn'; fbtn.textContent = 'Elegir carpeta';
   const finput = document.createElement('input');
@@ -2621,11 +2619,16 @@ function buildUpmControls(ctrl){
     refreshUploadModal();
   };
   r1.appendChild(fbtn); r1.appendChild(finput);
+  setupGeneralFolderDrop(r1, mode, async (files)=>{
+    upmSetBusy('Clasificando ' + files.length + ' fotos...');
+    await processGeneralFolder(files, mode);
+    refreshUploadModal();
+  });
   ctrl.appendChild(r1);
 
   const r2 = document.createElement('div');
   r2.className = 'upm-row';
-  r2.innerHTML = '<div><div class="upm-lbl">Subir fotos sueltas a</div><div class="upm-sub">Elige el destino y luego las fotos (o arrástralas sobre este recuadro).</div></div>' +
+  r2.innerHTML = '<div><div class="upm-lbl">Subir fotos sueltas a</div><div class="upm-sub">Elige el destino y arrastra las fotos a este bloque, o usa el botón.</div></div>' +
     '<div class="upm-sels">' +
     (hasT ? upmSelect('upmTgtT', state.tiendas, null, upmTarget.t) : '') +
     (hasE ? upmSelect('upmTgtE', state.elementos, null, upmTarget.e) : '') + '</div>';
@@ -2651,7 +2654,7 @@ function buildUpmControls(ctrl){
 
   const r3 = document.createElement('div');
   r3.className = 'upm-row upm-filters';
-  r3.innerHTML = '<div class="upm-lbl">Filtrar miniaturas</div><div class="upm-sels">' +
+  r3.innerHTML = '<div class="upm-lbl">Filtrar fotos</div><div class="upm-sels">' +
     (hasT ? upmSelect('upmFltT', state.tiendas, 'Todas las tiendas', upmFilter.t) : '') +
     (hasE ? upmSelect('upmFltE', state.elementos, 'Todos los elementos', upmFilter.e) : '') + '</div>';
   ctrl.appendChild(r3);
@@ -2847,6 +2850,68 @@ function setupDropFilesOrFolder(zone, onFiles){
       files = Array.from(e.dataTransfer.files || []);
     }
     files = files.filter(isImageFile);
+    if(files.length) onFiles(files);
+  });
+}
+function readEntriesWithPaths(entries, prefix){
+  return new Promise((resolve)=>{
+    const out = [];
+    let pending = entries.length;
+    if(pending===0){ resolve(out); return; }
+    const done = ()=>{ if(--pending===0) resolve(out); };
+    entries.forEach(entry=>{
+      if(entry.isFile){
+        entry.file(f=>{
+          try{ Object.defineProperty(f, 'webkitRelativePath', {value: (prefix||'') + (entry.fullPath||'').replace(/^\//,''), configurable:true}); }catch(err){}
+          out.push(f); done();
+        }, done);
+      } else if(entry.isDirectory){
+        const reader = entry.createReader();
+        const all = [];
+        const readBatch = ()=>{
+          reader.readEntries(async (subs)=>{
+            if(subs.length===0){
+              const sub = await readEntriesWithPaths(all, prefix);
+              out.push(...sub); done(); return;
+            }
+            all.push(...subs); readBatch();
+          }, done);
+        };
+        readBatch();
+      } else done();
+    });
+  });
+}
+/* Zona que acepta carpetas arrastradas para la "carga general". Si sueltas la
+   carpeta raíz (la que contiene las subcarpetas de tienda/elemento) se usa
+   como raíz, igual que al elegirla con el botón; si sueltas directamente
+   varias carpetas de tienda/elemento, se tratan como hijas de una raíz virtual. */
+function setupGeneralFolderDrop(zone, mode, onFiles){
+  ['dragenter','dragover'].forEach(ev=>zone.addEventListener(ev, e=>{
+    e.preventDefault(); e.stopPropagation(); zone.classList.add('dragover');
+  }));
+  ['dragleave','drop'].forEach(ev=>zone.addEventListener(ev, e=>{
+    e.preventDefault(); e.stopPropagation(); zone.classList.remove('dragover');
+  }));
+  zone.addEventListener('drop', async (e)=>{
+    const items = e.dataTransfer.items;
+    let entries = [];
+    if(items && items.length && items[0].webkitGetAsEntry){
+      entries = Array.from(items).map(it=>it.webkitGetAsEntry()).filter(Boolean);
+    }
+    if(!entries.length){
+      alert('Arrastra una carpeta (no archivos sueltos) a este bloque, o usa el botón "Elegir carpeta".');
+      return;
+    }
+    let prefix = '';
+    if(entries.length===1 && entries[0].isDirectory){
+      const nm = entries[0].name;
+      const isChild = (mode==='elementos') ? !!findElementoInSegments([nm]) : !!findTiendaInSegments([nm]);
+      if(isChild) prefix = '_raiz/';
+    } else {
+      prefix = '_raiz/';
+    }
+    const files = (await readEntriesWithPaths(entries, prefix)).filter(isImageFile);
     if(files.length) onFiles(files);
   });
 }
