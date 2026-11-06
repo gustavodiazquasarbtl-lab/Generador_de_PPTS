@@ -2420,7 +2420,6 @@ function rebuildUploadArea(){
       return;
     }
     area.appendChild(buildModalLauncher());
-    state.tiendas.forEach(t=> area.appendChild(buildBucketUploadZone(t, null)));
   } else if(state.mode === 'elementos'){
     hint.textContent = 'Abre la ventana de fotos para subir una carpeta general (con subcarpetas por elemento) o fotos sueltas a un elemento.';
     if(state.elementos.length===0){
@@ -2429,7 +2428,6 @@ function rebuildUploadArea(){
       return;
     }
     area.appendChild(buildModalLauncher());
-    state.elementos.forEach(e=> area.appendChild(buildBucketUploadZone(null, e)));
   } else if(state.mode === 'both'){
     hint.textContent = 'Abre la ventana de fotos para subir una carpeta general (Tienda > Elemento > fotos) o fotos sueltas a una tienda y elemento. Se clasifican por el nombre de cada subcarpeta.';
     if(state.tiendas.length===0 || state.elementos.length===0){
@@ -2438,7 +2436,6 @@ function rebuildUploadArea(){
       return;
     }
     area.appendChild(buildModalLauncher());
-    state.tiendas.forEach(t=> area.appendChild(buildFolderUploadZone(t)));
   } else if(state.mode === 'auto'){
     hint.textContent = 'Sube todas las fotos juntas (sin subcarpetas). La tienda y la fecha de cada foto se detectan automáticamente de su nombre de archivo.';
     area.appendChild(buildFlatUploadZone());
