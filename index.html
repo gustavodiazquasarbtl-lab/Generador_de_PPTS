@@ -1009,12 +1009,21 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   .live-tabs button{border:none;background:transparent;font-size:12px;padding:4px 9px;border-radius:6px;cursor:pointer;color:#475467;}
   .live-tabs button.on{background:#fff;color:#101828;font-weight:700;box-shadow:0 1px 2px rgba(0,0,0,.12);}
   .live-min{border:none;background:#e8ecf4;width:26px;height:26px;border-radius:7px;cursor:pointer;font-size:16px;line-height:1;}
+  .live-panel.big{width:min(860px, calc(100vw - 32px));}
+  .live-panel.big .live-body{max-height:calc(100vh - 130px);overflow:auto;}
   .live-body{padding:10px;background:#eef1f7;min-height:120px;}
   .live-body canvas{display:block;border:1px solid #d0d5dd;border-radius:8px;background:#fff;}
   .live-note{font-size:13px;color:#667085;text-align:center;padding:30px 10px;}
   .live-foot{font-size:11px;color:#667085;padding:7px 12px;border-top:1px solid #e5e7eb;}
   .live-pill{position:fixed;right:16px;bottom:16px;z-index:800;border:none;background:#0b1f4d;color:#fff;font-weight:700;font-size:13px;padding:10px 16px;border-radius:999px;box-shadow:0 6px 18px rgba(0,0,0,.3);cursor:pointer;display:none;}
   body.has-live .wrap, body.has-live .topbar-inner{margin-left:24px;margin-right:auto;}
+
+  /* ---- Distribución de fotos ---- */
+  .rows-picker{display:flex;gap:10px;flex-wrap:wrap;}
+  .rows-opt{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 18px;border:2px solid #d9dfeb;border-radius:12px;cursor:pointer;font-size:12px;color:#475467;background:#fff;}
+  .rows-opt input{display:none;}
+  .rows-opt:has(input:checked){border-color:#3b5bdb;background:#eef3ff;color:#1d3a9e;font-weight:700;}
+  .rows-opt.disabled{opacity:.4;cursor:not-allowed;}
 </style>
 </head>
 <body>
@@ -1085,6 +1094,21 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         <label class="radio-opt"><input type="radio" name="photosPerSlide" value="2" checked> 2 fotos por diapositiva</label>
         <label class="radio-opt"><input type="radio" name="photosPerSlide" value="3"> 3 fotos por diapositiva</label>
         <label class="radio-opt"><input type="radio" name="photosPerSlide" value="4"> 4 fotos por diapositiva</label>
+        <label class="radio-opt"><input type="radio" name="photosPerSlide" value="5"> 5 fotos por diapositiva</label>
+        <label class="radio-opt"><input type="radio" name="photosPerSlide" value="6"> 6 fotos por diapositiva</label>
+        <label class="radio-opt"><input type="radio" name="photosPerSlide" value="7"> 7 fotos por diapositiva</label>
+        <label class="radio-opt"><input type="radio" name="photosPerSlide" value="8"> 8 fotos por diapositiva</label>
+      </div>
+      <div id="photosRowsBlock">
+        <label class="field-label" style="margin-top:14px;">Distribución de las fotos</label>
+        <div class="rows-picker">
+          <label class="rows-opt" id="rowsOptTwo" title="Fotos en dos filas"><input type="radio" name="photosRows" value="2" disabled>
+            <span class="rows-ico" id="rowsIcoTwo"></span>
+            <span>Dos filas</span></label>
+          <label class="rows-opt" id="rowsOptOne" title="Todas las fotos en una sola fila"><input type="radio" name="photosRows" value="1" checked>
+            <span class="rows-ico" id="rowsIcoOne"></span>
+            <span>Una fila</span></label>
+        </div>
       </div>
     </div>
   </div>
@@ -1130,18 +1154,16 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 
     <div class="checkbox-line">
       <input type="checkbox" id="reskinSplitEvery45">
-      <div><div class="lbl">Dividir en archivos de 45 diapositivas</div><div class="sub">Recomendado para decks grandes (varios cientos de fotos)</div></div>
+      <div><div class="lbl">Dividir en archivos de 45 diapositivas</div><div class="sub">Recomendado para archivos grandes (varios cientos de fotos)</div></div>
     </div>
     <div class="checkbox-line">
-      <input type="checkbox" id="reskinZipOutput" checked>
-      <div><div class="lbl">Descargar todo en un solo ZIP</div><div class="sub">Junta todas las partes (PPTX y PDF) en un único archivo. Si con muchas fotos falla por memoria, desmárcalo.</div></div>
+      <input type="checkbox" id="reskinZipOutput">
+      <div><div class="lbl">Descargar en ZIP</div></div>
     </div>
 
     <div class="summary-line" id="reskinSummary">Ningún archivo cargado.</div>
 
     <div class="actions-row">
-      <button class="btn ghost" onclick="previewCover()">Vista previa de portada</button>
-      <button class="btn ghost" onclick="previewContent()">Vista previa de contenido</button>
       <button class="btn ghost" onclick="openLayoutEditor()"><svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 1 1 0-18c4 0 8 2.5 8 6.5 0 2-1.5 3.5-3.5 3.5H15a1.5 1.5 0 0 0-1 2.6c.4.4.6.9.6 1.4 0 1.1-1 2-2.6 2z"/><circle cx="7.5" cy="10.5" r="1" fill="currentColor" stroke="none"/><circle cx="10.5" cy="7" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="7.5" r="1" fill="currentColor" stroke="none"/></svg> Personalizar posiciones y letras</button>
       <button class="btn primary" id="btnReskinGenerate" onclick="generateReskin('both')" disabled>Aplicar formato y descargar (PPTX + PDF)</button>
       <button class="btn ghost" id="btnReskinPause" onclick="toggleGenPause('existente')" disabled>Pausar</button>
@@ -1172,8 +1194,6 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         <button class="add-btn" onclick="addTiendasFromTextarea()">Agregar</button>
       </div>
       <div class="list-tools-row">
-        <button onclick="downloadListTemplate('tiendas')"><svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg> Descargar plantilla Excel</button>
-        <button onclick="triggerListUpload('tiendas')"><svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9M7 14l5-5 5 5M5 3h14"/></svg> Subir lista desde Excel</button>
         <input type="file" id="tiendaFileInput" accept=".xlsx,.xls,.csv,.txt" style="display:none" onchange="handleListFile('tiendas', this)">
         <button id="btnClearTiendas" onclick="clearAllTiendas()" style="color:#b42318; border-color:#f0b8b2;" disabled><svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg> Eliminar todos</button>
       </div>
@@ -1191,8 +1211,6 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         <button class="add-btn" onclick="addElementosFromTextarea()">Agregar</button>
       </div>
       <div class="list-tools-row">
-        <button onclick="downloadListTemplate('elementos')"><svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg> Descargar plantilla Excel</button>
-        <button onclick="triggerListUpload('elementos')"><svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9M7 14l5-5 5 5M5 3h14"/></svg> Subir lista desde Excel</button>
         <input type="file" id="elementoFileInput" accept=".xlsx,.xls,.csv,.txt" style="display:none" onchange="handleListFile('elementos', this)">
         <button id="btnClearElementos" onclick="clearAllElementos()" style="color:#b42318; border-color:#f0b8b2;" disabled><svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg> Eliminar todos</button>
       </div>
@@ -1221,7 +1239,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       <input type="text" id="autoElementName" placeholder="Ej: EXHIBIDOR CABECERA" style="width:100%; padding:9px 12px; border:1px solid #d0d5dd; border-radius:8px; font-size:14px;">
     </div>
 
-    <div id="showDateBlock" style="display:none;">
+    <div id="showDateBlock">
       <div class="checkbox-line" style="margin-top:16px;">
         <input type="checkbox" id="showDate" onchange="onShowDateChange()">
         <div><div class="lbl">Agregar subtítulo con la fecha</div><div class="sub">Se extrae del nombre de cada foto (ej. colgate_palmolive-whitening-pvea_breña-23608-A-20260911-083956 → 11/09 u 11/09/2026 08:39)</div></div>
@@ -1257,18 +1275,16 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 
     <div class="checkbox-line">
       <input type="checkbox" id="splitEvery45">
-      <div><div class="lbl">Dividir en archivos de 45 diapositivas</div><div class="sub">Recomendado para decks grandes (varios cientos de fotos)</div></div>
+      <div><div class="lbl">Dividir en archivos de 45 diapositivas</div><div class="sub">Recomendado para archivos grandes (varios cientos de fotos)</div></div>
     </div>
     <div class="checkbox-line">
-      <input type="checkbox" id="zipOutput" checked>
-      <div><div class="lbl">Descargar todo en un solo ZIP</div><div class="sub">Junta todas las partes (PPTX y PDF) en un único archivo. Si con muchas fotos falla por memoria, desmárcalo.</div></div>
+      <input type="checkbox" id="zipOutput">
+      <div><div class="lbl">Descargar en ZIP</div></div>
     </div>
 
     <div class="summary-line" id="summaryLine">Sin fotos cargadas todavía.</div>
 
     <div class="actions-row">
-      <button class="btn ghost" onclick="previewCover()">Vista previa de portada</button>
-      <button class="btn ghost" onclick="previewContent()">Vista previa de contenido</button>
       <button class="btn ghost" onclick="openLayoutEditor()"><svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 1 1 0-18c4 0 8 2.5 8 6.5 0 2-1.5 3.5-3.5 3.5H15a1.5 1.5 0 0 0-1 2.6c.4.4.6.9.6 1.4 0 1.1-1 2-2.6 2z"/><circle cx="7.5" cy="10.5" r="1" fill="currentColor" stroke="none"/><circle cx="10.5" cy="7" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="7.5" r="1" fill="currentColor" stroke="none"/></svg> Personalizar posiciones y letras</button>
       <button class="btn primary" id="btnGenerate" onclick="generateOutput('both')" disabled>Generar y descargar (PPTX + PDF)</button>
       <button class="btn ghost" id="btnPause" onclick="toggleGenPause('nueva')" disabled>Pausar</button>
@@ -1578,8 +1594,44 @@ function getSlideSlots(slide, layout){
   const bottom = slide.footer ? 6.75 : 7.1;
   return slots.map(sl => Object.assign({}, sl, {h: Math.max(sl.h, bottom - sl.y)}));
 }
+/* Distribuciones generadas: cuadrícula ordenada en 1 o 2 filas. Cada celda
+   tiene el mismo tamaño y la foto se ajusta dentro conservando su proporción;
+   el nombre de la tienda va arriba de cada celda y la fecha abajo. La fila
+   incompleta (si hay cantidad impar) queda centrada. */
+const _gridCache = {};
+function genGridLayout(n, rows, hasFooter){
+  const key = n + '-' + rows + '-' + (hasFooter ? 1 : 0);
+  if(_gridCache[key]) return _gridCache[key];
+  const X0 = 0.45, W = 12.433, gapX = 0.22, LBL = 0.30, DAT = 0.30, G = 0.05, rowGap = 0.12;
+  const top = 1.52, bottom = hasFooter ? 6.8 : 7.2;
+  const perRow = rows === 2 ? Math.ceil(n/2) : n;
+  const counts = rows === 2 ? [perRow, n - perRow] : [n];
+  const cellW = (W - gapX*(perRow-1)) / perRow;
+  const nR = counts.length;
+  const fixed = nR*(LBL + DAT + 2*G) + (nR-1)*rowGap;
+  const maxCellH = (bottom - top - fixed) / nR;
+  const cellH = Math.min(maxCellH, cellW*1.2);
+  const rowH = cellH + LBL + DAT + 2*G;
+  const blockH = nR*rowH + (nR-1)*rowGap;
+  const y0 = top + (bottom - top - blockH) / 2;
+  const lf = cellW >= 2.6 ? 14 : (cellW >= 1.8 ? 12 : 10), df = lf - 2;
+  const slots = [], dates = [], storeLabels = [];
+  counts.forEach((c, r)=>{
+    const rowTop = y0 + r*(rowH + rowGap);
+    const rowW = c*cellW + (c-1)*gapX;
+    const xs = X0 + (W - rowW) / 2;
+    for(let i=0;i<c;i++){
+      const x = xs + i*(cellW + gapX);
+      storeLabels.push({x, y:rowTop, w:cellW, h:LBL, fontSize:lf, fontFamily:'Arial', color:null});
+      slots.push({x, y:rowTop + LBL + G, w:cellW, h:cellH});
+      dates.push({x, y:rowTop + LBL + G + cellH + G, w:cellW, h:DAT, fontSize:df, fontFamily:'Arial', color:null});
+    }
+  });
+  return (_gridCache[key] = {slots, dates, storeLabels});
+}
 function getContentLayout(slide, n){
-  if(slide.auto && n===4) return AUTO_PHOTOS_4;
+  const rows = slide.rows || (n >= 4 ? 2 : 1);
+  if(n >= 5 || (n === 4 && rows === 1) || ((n === 2 || n === 3) && rows === 2)) return genGridLayout(n, rows, !!slide.footer);
   return LAYOUT.photos[n] || LAYOUT.photos[2];
 }
 /* El texto "GRACIAS" usa una caja distinta según el diseño: el Diseño 1
@@ -1608,11 +1660,59 @@ function resetLayoutTemplate(tpl){
 function getPhotosPerSlide(){
   const r = document.querySelector('input[name=photosPerSlide]:checked');
   const n = r ? parseInt(r.value,10) : 2;
-  return LAYOUT.photos[n] ? n : 2;
+  return (n>=1 && n<=8) ? n : 2;
 }
+/* Filas: 1 o 2. Con 1 sola foto no hay opción: siempre una fila. */
+function getPhotosRows(){
+  const n = getPhotosPerSlide();
+  if(n < 2) return 1;
+  const r = document.querySelector('input[name=photosRows]:checked');
+  return r ? parseInt(r.value,10) : 1;
+}
+let rowsTouched = false;
+/* Iconos de las opciones: muestran tantas bolitas como fotos por diapositiva se elijan */
+function rowsDotsSvg(n, rows){
+  const W = 48, H = 30;
+  const perRow = rows === 2 ? Math.ceil(n/2) : n;
+  const counts = rows === 2 ? [perRow, n - perRow] : [n];
+  const gap = (W - 4) / Math.max(perRow, 1);
+  const r = Math.min(4.6, gap * 0.38);
+  const ys = rows === 2 ? [H*0.28, H*0.74] : [H/2];
+  let dots = '';
+  counts.forEach((c, ri)=>{
+    const rowW = (c - 1) * gap;
+    const x0 = W/2 - rowW/2;
+    for(let i=0;i<c;i++) dots += '<circle cx="'+(x0 + i*gap).toFixed(2)+'" cy="'+ys[ri].toFixed(2)+'" r="'+r.toFixed(2)+'"/>';
+  });
+  return '<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" fill="currentColor">'+dots+'</svg>';
+}
+function updateRowsUI(){
+  const n = getPhotosPerSlide();
+  const icoOne = document.getElementById('rowsIcoOne'), icoTwo = document.getElementById('rowsIcoTwo');
+  if(icoOne) icoOne.innerHTML = rowsDotsSvg(n, 1);
+  if(icoTwo) icoTwo.innerHTML = rowsDotsSvg(n, 2);
+  const two = document.querySelector('input[name=photosRows][value="2"]');
+  const one = document.querySelector('input[name=photosRows][value="1"]');
+  if(!two || !one) return;
+  const block = document.getElementById('photosRowsBlock');
+  if(block) block.style.display = n >= 2 ? '' : 'none';
+  two.disabled = n < 2;
+  one.disabled = n < 2;
+  if(n < 2) one.checked = true;
+  else if(!rowsTouched && two.checked) one.checked = true;
+  document.getElementById('rowsOptTwo').classList.toggle('disabled', two.disabled);
+  document.getElementById('rowsOptOne').classList.toggle('disabled', one.disabled);
+}
+document.addEventListener('change', e=>{
+  if(!e.target || !e.target.name) return;
+  if(e.target.name === 'photosRows') rowsTouched = true;
+  if(e.target.name === 'photosPerSlide') updateRowsUI();
+});
+window.addEventListener('load', updateRowsUI);
 function setPhotosPerSlide(n){
   const r = document.querySelector('input[name=photosPerSlide][value="'+n+'"]');
   if(r) r.checked = true;
+  updateRowsUI();
 }
 
 /* ===================== FILENAME DATE PARSING ===================== */
@@ -2308,6 +2408,7 @@ function exportConfig(){
     version: 1,
     design: state.design,
     photosPerSlide: getPhotosPerSlide(),
+    photosRows: getPhotosRows(),
     tiendas: state.tiendas,
     elementos: state.elementos,
     useTiendas: document.getElementById('useTiendas').checked,
@@ -2346,6 +2447,10 @@ function handleConfigFile(inputEl){
       }
       onShowDateChange();
       if(cfg.photosPerSlide) setPhotosPerSlide(cfg.photosPerSlide);
+      if(cfg.photosRows){
+        const rr = document.querySelector('input[name=photosRows][value="'+cfg.photosRows+'"]');
+        if(rr && !rr.disabled){ rr.checked = true; rowsTouched = true; }
+      }
       if(typeof cfg.splitEvery45 === 'boolean') document.getElementById('splitEvery45').checked = cfg.splitEvery45;
       document.getElementById('useTiendas').checked = !!cfg.useTiendas;
       document.getElementById('useElementos').checked = !!cfg.useElementos;
@@ -2381,16 +2486,7 @@ function onOrgChange(sourceEl){
   const useA = autoCb.checked;
   document.getElementById('tiendasBlock').style.display = useT ? 'block' : 'none';
   document.getElementById('elementosBlock').style.display = useE ? 'block' : 'none';
-  // El subtítulo con la fecha solo tiene sentido en "Organizar por Tiendas/Elementos",
-  // que es el único modo que detecta la fecha automáticamente desde el nombre de
-  // cada foto; en los demás modos se oculta y se apaga para que no quede activo
-  // sin que se vea el control.
-  const showDateBlock = document.getElementById('showDateBlock');
-  if(showDateBlock) showDateBlock.style.display = useA ? 'block' : 'none';
-  if(!useA){
-    const showDateCb = document.getElementById('showDate');
-    if(showDateCb) showDateCb.checked = false;
-  }
+  // La opción de fecha como subtítulo está disponible en todos los modos.
   onShowDateChange();
   if(useT && useE) state.mode = 'both';
   else if(useT) state.mode = 'tiendas';
@@ -3613,6 +3709,7 @@ function buildSlideModel(){
         footer: footerText || '',
         showDate,
         photos: group,
+        rows: getPhotosRows(),
         auto: state.mode === 'auto'
       });
     }
@@ -3788,7 +3885,13 @@ async function drawSlide(slide, design, skippedOut){
       if(!img) continue;
       const box = slots[i];
       const bx = box.x*IN, by = box.y*IN, bw = box.w*IN, bh = box.h*IN;
-      if(slide.reskin){
+      if(slide.reskin && slide.photos.length >= 5){
+        // Con 5 o más fotos en la diapositiva: se ajustan completas dentro de
+        // su celda (sin recortar), conservando su proporción original.
+        const scale = Math.min(bw/img.width, bh/img.height);
+        const dw = img.width*scale, dh = img.height*scale;
+        ctx.drawImage(img, bx + (bw-dw)/2, by + (bh-dh)/2, dw, dh);
+      } else if(slide.reskin){
         // "cover": todas las fotos llenan exactamente el mismo recuadro
         // (incluida la primera), en vez de "contain" que dejaba unas más
         // chicas que otras según su relación de aspecto. El sobrante se
@@ -3882,7 +3985,7 @@ async function drawSlide(slide, design, skippedOut){
 
 
 /* ===================== VISTA PREVIA EN VIVO ===================== */
-const live = {open:false, tab:'content', timer:null, busy:false, again:false};
+const live = {open:false, big:false, tab:'content', timer:null, busy:false, again:false};
 function ensureLivePanel(){
   let el = document.getElementById('livePanel');
   if(el) return el;
@@ -3891,6 +3994,7 @@ function ensureLivePanel(){
   el.className = 'live-panel';
   el.innerHTML = '<div class="live-head"><b>Vista previa en vivo</b>' +
     '<div class="live-tabs"><button type="button" data-tab="cover">Portada</button><button type="button" data-tab="content" class="on">Contenido</button></div>' +
+    '<button type="button" class="live-min" id="liveBig" title="Ampliar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></button>' +
     '<button type="button" class="live-min" id="liveMin" title="Minimizar">&minus;</button></div>' +
     '<div class="live-body" id="liveBody"></div>' +
     '<div class="live-foot">Se actualiza sola al cambiar diseño, títulos, fecha o fotos.</div>';
@@ -3901,6 +4005,12 @@ function ensureLivePanel(){
   document.body.appendChild(pill);
   pill.onclick = ()=> setLiveOpen(true);
   el.querySelector('#liveMin').onclick = ()=> setLiveOpen(false);
+  el.querySelector('#liveBig').onclick = ()=>{
+    live.big = !live.big;
+    el.classList.toggle('big', live.big);
+    el.querySelector('#liveBig').title = live.big ? 'Reducir' : 'Ampliar';
+    syncLiveVisibility();
+  };
   el.querySelectorAll('.live-tabs button').forEach(btn=>{
     btn.onclick = ()=>{
       live.tab = btn.dataset.tab;
@@ -3928,7 +4038,7 @@ function syncLiveVisibility(){
   const inFlow = liveFlowVisible();
   panel.style.display = (live.open && inFlow) ? 'block' : 'none';
   pill.style.display = (!live.open && inFlow) ? 'block' : 'none';
-  document.body.classList.toggle('has-live', live.open && inFlow && window.innerWidth >= 1440);
+  document.body.classList.toggle('has-live', live.open && inFlow && !live.big && window.innerWidth >= 1440);
 }
 function applyLiveLayout(){ syncLiveVisibility(); }
 function setLiveOpen(on){
@@ -3975,7 +4085,7 @@ async function renderLivePreview(){
 }
 window.addEventListener('load', ()=>{
   ensureLivePanel();
-  setLiveOpen(window.innerWidth >= 1440);
+  setLiveOpen(false);
 });
 
 /* ===================== PREVIEW ===================== */
@@ -4037,7 +4147,7 @@ function buildContentPreviewSlide(){
   }
   const footer = state.tiendas.length ? state.tiendas[0] : '';
   const hasPhotos = sample.some(Boolean);
-  const slide = {type:'content', title, footer, showDate, photos: sample, auto: state.mode === 'auto'};
+  const slide = {type:'content', title, footer, showDate, photos: sample, rows: getPhotosRows(), auto: state.mode === 'auto'};
   return {slide, hasPhotos};
 }
 
@@ -4148,7 +4258,9 @@ async function buildPptxFile(slideModel, filename, onProgress){
         }
         if(dataURL){
           const box = slots[i];
-          if(slide.reskin){
+          if(slide.reskin && slide.photos.length >= 5){
+            s.addImage({data:dataURL, x:box.x, y:box.y, w:box.w, h:box.h, sizing:{type:'contain', w:box.w, h:box.h}});
+          } else if(slide.reskin){
             // "cover" en vez de "contain": todas las fotos llenan exactamente el
             // mismo recuadro (incluida la primera), sin achicarse cuando su
             // relación de aspecto es distinta a la de sus vecinas. El recorte
@@ -4459,6 +4571,26 @@ async function extractContentSlidesFromPptx(file, onProgress){
       }catch(e){ /* skip unreadable image */ }
     }
 
+    // Orden de lectura: de arriba hacia abajo y, dentro de cada fila, de
+    // izquierda a derecha (antes quedaban en el orden interno del archivo).
+    {
+      const pos = images.filter(im=>im.x!==null && im.y!==null);
+      const rest = images.filter(im=>im.x===null || im.y===null);
+      pos.sort((a,b)=>(a.y+a.cy/2)-(b.y+b.cy/2));
+      const medH = pos.length ? pos.map(im=>im.cy).sort((a,b)=>a-b)[Math.floor(pos.length/2)] : 0;
+      const rowsArr = [];
+      pos.forEach(im=>{
+        const cy = im.y + im.cy/2;
+        const last = rowsArr[rowsArr.length-1];
+        if(last && Math.abs(cy - last.cy) <= medH*0.4) last.items.push(im);
+        else rowsArr.push({cy, items:[im]});
+      });
+      rowsArr.forEach(r=>r.items.sort((a,b)=>a.x-b.x));
+      images.length = 0;
+      rowsArr.forEach(r=>r.items.forEach(im=>images.push(im)));
+      rest.forEach(im=>images.push(im));
+    }
+
     // Text boxes on the slide (store/photo captions, or a slide title) — matched
     // to the nearest photo by horizontal position so they land back in the
     // correct spot instead of being discarded.
@@ -4521,13 +4653,17 @@ async function extractContentSlidesFromPptx(file, onProgress){
       // Ahora respetamos la cantidad real de fotos que había en cada
       // diapositiva original (con un máximo de 4, que es lo que soportan las
       // plantillas), para conservar su tamaño y proporción tal como estaban.
-      const perSlide = Math.max(1, Math.min(images.length, 4));
+      // Se mantienen TODAS las fotos que traía la diapositiva (hasta 8 por
+      // diapositiva; si hay más, se reparten en partes iguales), ordenadas
+      // con la distribución del diseño (4 = 2x2, 5 a 8 = dos filas).
+      const nParts = Math.ceil(images.length / 8);
+      const perSlide = Math.max(1, Math.ceil(images.length / nParts));
       for(let i=0;i<images.length;i+=perSlide){
         const group = [];
         let groupHasBelowLabel = false;
         for(let j=0;j<perSlide;j++){
           const img = images[i+j];
-          if(!img){ group.push(null); continue; }
+          if(!img) continue;
           const lbl = labels[i+j];
           const isAbove = lbl && lbl.position === 'above';
           const isBelow = lbl && lbl.position === 'below';
@@ -4766,7 +4902,7 @@ function buildEditorSampleSlide(tpl){
     if(titleMode==='elementos') title = state.elementos[0] || 'ELEMENTO';
     else if(titleMode==='tiendas') title = state.tiendas[0] || 'TIENDA';
     const footer = state.tiendas.length ? state.tiendas[0] : '';
-    return {type:'content', title, footer, showDate, photos: sample, auto: state.mode === 'auto'};
+    return {type:'content', title, footer, showDate, photos: sample, rows: getPhotosRows(), auto: state.mode === 'auto'};
   }
   if(tpl === 'gracias') return {type:'gracias'};
   return {type:tpl};
