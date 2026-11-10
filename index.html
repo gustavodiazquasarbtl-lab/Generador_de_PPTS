@@ -1024,6 +1024,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   .rows-opt input{display:none;}
   .rows-opt:has(input:checked){border-color:#3b5bdb;background:#eef3ff;color:#1d3a9e;font-weight:700;}
   .rows-opt.disabled{opacity:.4;cursor:not-allowed;}
+
+  .unc-head{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;}
+  .unc-chev{display:inline-flex;transition:transform .15s;}
+  .unc-head.open .unc-chev{transform:rotate(90deg);}
+  .unc-link{color:#b45309;text-decoration:underline;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -2654,59 +2659,47 @@ let upmControlsKey = '';
 const upmFilter = {t:'', e:''};
 const upmTarget = {t:'', e:''};
 const upmToggled = new Map();
-const upmSel = new Set();            // fotos seleccionadas para mover
-const upmMoveTo = {t:'', e:''};      // destino elegido ('' = sin cambiar)
-function upmLocate(p){
-  for(const [key, list] of Object.entries(state.buckets)){
-    if(list.indexOf(p) >= 0){
-      const parts = key.split('||');
-      return {key, list, t: parts[0] || null, e: parts[1] || null};
-    }
-  }
-  return null;
-}
+const upmSel = new Set();            // fotos sin clasificar seleccionadas
+const upmMoveTo = {t:'', e:''};      // destino elegido
 function upmRenderMoveBar(){
   const bar = document.getElementById('upmMoveBar');
   if(!bar) return;
-  const bucketMode = !(state.mode==='flat' || state.mode==='auto');
-  // limpiar de la selección fotos que ya no existen
-  Array.from(upmSel).forEach(p=>{ if(!upmLocate(p)) upmSel.delete(p); });
-  if(!bucketMode || upmSel.size===0){ bar.innerHTML = ''; return; }
-  const hasT = (state.mode==='tiendas' || state.mode==='both');
-  const hasE = (state.mode==='elementos' || state.mode==='both');
+  // quitar de la selección fotos que ya no están sin clasificar
+  const pend = new Set(state.unclassified.map(it=>it.rec));
+  Array.from(upmSel).forEach(p=>{ if(!pend.has(p)) upmSel.delete(p); });
+  if(upmSel.size===0){ bar.innerHTML = ''; return; }
+  const items = state.unclassified.filter(it=>upmSel.has(it.rec));
+  const needT = items.some(it=>it.needTienda);
+  const needE = items.some(it=>it.needElemento);
   bar.innerHTML = '<div class="upm-move"><b>' + upmSel.size + (upmSel.size===1 ? ' foto seleccionada' : ' fotos seleccionadas') + '</b>' +
-    '<span class="upm-move-lbl">Mover a:</span>' +
-    (hasT ? upmSelect('upmMvT', state.tiendas, '— tienda sin cambiar —', upmMoveTo.t) : '') +
-    (hasE ? upmSelect('upmMvE', state.elementos, '— elemento sin cambiar —', upmMoveTo.e) : '') +
-    '<button type="button" class="btn primary" id="upmMvGo">Mover</button>' +
+    '<span class="upm-move-lbl">Asignar a:</span>' +
+    (needT ? upmSelect('upmMvT', state.tiendas, '-- tienda --', upmMoveTo.t) : '') +
+    (needE ? upmSelect('upmMvE', state.elementos, '-- elemento --', upmMoveTo.e) : '') +
+    '<button type="button" class="btn primary" id="upmMvGo">Asignar</button>' +
     '<button type="button" class="btn" id="upmMvCancel">Quitar selección</button></div>';
   const mt = bar.querySelector('#upmMvT'); if(mt) mt.onchange = ()=>{ upmMoveTo.t = mt.value; };
   const me = bar.querySelector('#upmMvE'); if(me) me.onchange = ()=>{ upmMoveTo.e = me.value; };
   bar.querySelector('#upmMvCancel').onclick = ()=>{ upmSel.clear(); refreshUploadModal(); };
-  bar.querySelector('#upmMvGo').onclick = ()=> upmMoveSelected(hasT, hasE);
+  bar.querySelector('#upmMvGo').onclick = ()=> upmAssignSelected();
 }
-function upmMoveSelected(hasT, hasE){
-  const newT = hasT ? (upmMoveTo.t || null) : null;
-  const newE = hasE ? (upmMoveTo.e || null) : null;
-  if(!newT && !newE){ alert('Elige a qué tienda y/o elemento quieres mover las fotos.'); return; }
-  let moved = 0;
-  Array.from(upmSel).forEach(p=>{
-    const loc = upmLocate(p);
-    if(!loc) return;
-    const destT = hasT ? (newT || loc.t) : null;
-    const destE = hasE ? (newE || loc.e) : null;
-    const destKey = bucketKey(destT, destE);
-    if(destKey === loc.key) return;
-    loc.list.splice(loc.list.indexOf(p), 1);
-    state.buckets[destKey] = sortPhotos((state.buckets[destKey] || []).concat([p]));
-    moved++;
+function upmAssignSelected(){
+  const items = state.unclassified.filter(it=>upmSel.has(it.rec));
+  if(!items.length) return;
+  const needT = items.some(it=>it.needTienda), needE = items.some(it=>it.needElemento);
+  if(needT && !upmMoveTo.t){ alert('Selecciona una tienda.'); return; }
+  if(needE && !upmMoveTo.e){ alert('Selecciona un elemento.'); return; }
+  items.forEach(it=>{
+    const t = it.needTienda ? upmMoveTo.t : it.tienda;
+    const e = it.needElemento ? upmMoveTo.e : it.elemento;
+    pushToBucket(t, e, it.rec);
+    const i = state.unclassified.indexOf(it);
+    if(i>=0) state.unclassified.splice(i,1);
   });
+  log('Fotos asignadas: ' + items.length);
   upmSel.clear();
-  log('Fotos movidas: ' + moved);
   rebuildUploadArea();
   refreshUploadModal();
 }
-
 function ensureUploadModal(){
   let ov = document.getElementById('upModal');
   if(ov) return ov;
@@ -2859,6 +2852,10 @@ function upmBuildSections(){
     return [{id:'all', title:null, entries: state.photos.map(p=>({p, t:null, e:null})), leaf:true}];
   }
   const secs = [];
+  if(state.unclassified.length){
+    secs.push({id:'unclassified', title:'Sin clasificar', unclassified:true, leaf:true,
+      entries: state.unclassified.map(it=>({p:it.rec, t:null, e:null, un:true, item:it}))});
+  }
   if(mode==='tiendas'){
     state.tiendas.forEach(t=>{
       if(upmFilter.t && upmFilter.t!==t) return;
@@ -2925,7 +2922,7 @@ function refreshUploadModal(){
       del.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
       del.onclick = (ev)=>{ ev.stopPropagation(); deleteModalPhoto(en); };
       it.appendChild(del);
-      if(bucketMode){
+      if(en.un){
         const chk = document.createElement('input');
         chk.type = 'checkbox'; chk.className = 'upm-chk'; chk.title = 'Seleccionar para mover';
         chk.checked = upmSel.has(p);
@@ -2938,7 +2935,7 @@ function refreshUploadModal(){
         };
         it.appendChild(chk);
       }
-      const tagTxt = (p.tienda && (state.mode==='auto' || state.mode==='flat') ? p.tienda + (p.label ? ' · ' + p.label : '') : (p.label || ''));
+      const tagTxt = en.un ? p.name : (p.tienda && (state.mode==='auto' || state.mode==='flat') ? p.tienda + (p.label ? ' · ' + p.label : '') : (p.label || ''));
       if(tagTxt){
         const tag = document.createElement('div');
         tag.className = 'upm-tag'; tag.textContent = tagTxt;
@@ -2955,16 +2952,16 @@ function refreshUploadModal(){
       } else parent.appendChild(thumbGrid(sc.entries));
       return;
     }
-    const open = upmToggled.has(sc.id) ? upmToggled.get(sc.id) : defaultOpen;
+    const open = upmToggled.has(sc.id) ? upmToggled.get(sc.id) : (sc.unclassified ? true : defaultOpen);
     const box = document.createElement('div');
     box.className = 'upm-sec' + (level>0 ? ' upm-sec-sub' : '');
     const head = document.createElement('div');
     head.className = 'upm-sec-h' + (open ? ' open' : '');
     head.innerHTML = '<span class="upm-chev">'+icon('chevron')+'</span>' +
-      (bucketMode && sc.entries.length>0 ? '<input type="checkbox" class="upm-secchk" title="Seleccionar todas las fotos de esta sección"'+(sc.entries.every(en=>upmSel.has(en.p))?' checked':'')+'>' : '') +
+      (sc.unclassified && sc.entries.length>0 ? '<input type="checkbox" class="upm-secchk" title="Seleccionar todas las fotos de esta sección"'+(sc.entries.every(en=>upmSel.has(en.p))?' checked':'')+'>' : '') +
       '<span class="upm-sec-name">'+escapeHtml(sc.title)+'</span>' +
       '<span class="count-badge'+(sc.entries.length>0?' has':'')+'">'+sc.entries.length+' fotos</span>';
-    if(sc.leaf && sc.entries.length>0){
+    if(sc.leaf && sc.entries.length>0 && !sc.unclassified){
       const clr = document.createElement('button');
       clr.type = 'button'; clr.className = 'clear-btn-mini'; clr.title = 'Vaciar fotos de esta sección';
       clr.innerHTML = icon('trash');
@@ -3005,7 +3002,9 @@ function refreshUploadModal(){
   body.scrollTop = keepScroll;
 }
 function deleteModalPhoto(en){
-  if(en.t===null && en.e===null){
+  if(en.un){
+    state.unclassified = state.unclassified.filter(it=>it.rec!==en.p);
+  } else if(en.t===null && en.e===null){
     state.photos = state.photos.filter(x=>x!==en.p);
   } else {
     const list = state.buckets[bucketKey(en.t, en.e)];
@@ -3037,7 +3036,7 @@ function renderUpViewer(){
   const en = upmViewList[upmViewIdx];
   if(!en){ closeUpViewer(); return; }
   vw.querySelector('.upv-img').src = photoUrl(en.p);
-  const where = [en.t, en.e].filter(Boolean).join(' / ') || en.p.tienda || '';
+  const where = [en.t, en.e].filter(Boolean).join(' / ') || (en.item && en.item.tienda) || en.p.tienda || '';
   vw.querySelector('.upv-cap').textContent = (upmViewIdx+1) + ' / ' + upmViewList.length + (where ? ' — ' + where : '') + ' — ' + en.p.name;
   const multi = upmViewList.length > 1;
   vw.querySelector('.upv-prev').style.display = multi ? 'flex' : 'none';
@@ -3549,12 +3548,30 @@ async function processGeneralFolder(files, mode){
   rebuildUploadArea();
 }
 
+let unclassifiedOpen = false;   // plegado por defecto
+function openUnclassifiedViewer(idx){
+  ensureUploadModal();
+  upmViewList = state.unclassified.map(it=>({p:it.rec, t:null, e:null, un:true, item:it}));
+  upmViewIdx = idx;
+  document.getElementById('upViewer').classList.add('open');
+  renderUpViewer();
+}
 function renderUnclassified(){
   const area = document.getElementById('unclassifiedArea');
   if(state.unclassified.length === 0){ area.innerHTML=''; return; }
   const box = document.createElement('div');
   box.className = 'warn-box';
-  box.innerHTML = '<b>'+state.unclassified.length+' fotos sin clasificar.</b> Asígnales manualmente:';
+  const head = document.createElement('div');
+  head.className = 'unc-head' + (unclassifiedOpen ? ' open' : '');
+  head.innerHTML = '<span class="unc-chev">'+icon('chevron')+'</span><span><b>'+state.unclassified.length+' fotos sin clasificar.</b> Asígnales manualmente:</span>';
+  box.appendChild(head);
+  const body = document.createElement('div');
+  body.style.display = unclassifiedOpen ? 'block' : 'none';
+  head.onclick = ()=>{
+    unclassifiedOpen = !unclassifiedOpen;
+    head.classList.toggle('open', unclassifiedOpen);
+    body.style.display = unclassifiedOpen ? 'block' : 'none';
+  };
   state.unclassified.forEach((item, idx)=>{
     const row = document.createElement('div');
     row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;font-size:11.5px;flex-wrap:wrap;';
@@ -3562,7 +3579,16 @@ function renderUnclassified(){
     if(item.tienda) context += ' · tienda: '+item.tienda;
     if(item.elemento) context += ' · elemento: '+item.elemento;
     const label = document.createElement('span');
-    label.innerHTML = escapeHtml(item.rec.name) + '<span style="color:#999;">'+escapeHtml(context)+'</span>';
+    const link = document.createElement('a');
+    link.className = 'unc-link';
+    link.textContent = item.rec.name;
+    link.title = 'Click para ver la foto en grande';
+    link.onclick = ()=> openUnclassifiedViewer(idx);
+    label.appendChild(link);
+    const ctx = document.createElement('span');
+    ctx.style.color = '#999';
+    ctx.textContent = context;
+    label.appendChild(ctx);
     row.appendChild(label);
 
     const selWrap = document.createElement('span');
@@ -3595,8 +3621,9 @@ function renderUnclassified(){
     };
     selWrap.appendChild(assignBtn);
     row.appendChild(selWrap);
-    box.appendChild(row);
+    body.appendChild(row);
   });
+  box.appendChild(body);
   area.innerHTML = '';
   area.appendChild(box);
 }
@@ -4123,6 +4150,17 @@ function getSamplePhotosForPreview(n){
   return [];
 }
 
+let _previewPlaceholder = null;
+function getPreviewPlaceholder(){
+  if(_previewPlaceholder) return _previewPlaceholder;
+  const c = document.createElement('canvas'); c.width = 600; c.height = 450;
+  const x = c.getContext('2d');
+  x.fillStyle = '#e5e7eb'; x.fillRect(0,0,600,450);
+  x.strokeStyle = '#c4cad6'; x.lineWidth = 6; x.strokeRect(3,3,594,444);
+  x.fillStyle = '#c4cad6'; x.beginPath(); x.moveTo(150,330); x.lineTo(260,200); x.lineTo(340,290); x.lineTo(400,230); x.lineTo(470,330); x.closePath(); x.fill();
+  x.beginPath(); x.arc(420,140,34,0,Math.PI*2); x.fill();
+  return (_previewPlaceholder = c.toDataURL('image/png'));
+}
 function buildContentPreviewSlide(){
   const n = getPhotosPerSlide();
   const sample = getSamplePhotosForPreview(n);
@@ -4147,6 +4185,14 @@ function buildContentPreviewSlide(){
   }
   const footer = state.tiendas.length ? state.tiendas[0] : '';
   const hasPhotos = sample.some(Boolean);
+  // La muestra siempre tiene exactamente las fotos por diapositiva elegidas:
+  // si hay menos fotos reales se repiten; si no hay ninguna, se usan recuadros grises.
+  {
+    const real = sample.filter(Boolean);
+    for(let i=0;i<n;i++){
+      if(!sample[i]) sample[i] = real.length ? real[i % real.length] : {dataURL: getPreviewPlaceholder(), tienda:'', label:''};
+    }
+  }
   const slide = {type:'content', title, footer, showDate, photos: sample, rows: getPhotosRows(), auto: state.mode === 'auto'};
   return {slide, hasPhotos};
 }
